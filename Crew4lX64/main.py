@@ -1,6 +1,10 @@
 import asyncio
 import sys
 import time
+from argparse import ArgumentParser
+from urllib.parse import urlparse
+import logging
+import os
 
 ascii_art = """                                                                            
 ███████╗ ██████╗ ███╗   ███╗██████╗ ██╗████████╗██╗  ██╗ ██████╗ ██╗  ██╗
@@ -13,14 +17,9 @@ ascii_art = """
 
 from web_crawler import WebCrawler
 from data_exporter import DataExporter
-from argparse import ArgumentParser
 from rate_limiter import RateLimiter
 from content_extractor import ContentExtractor
 from proxy_manager import ProxyManager
-from urllib.parse import urlparse
-import logging
-import time
-import os
 
 class ProgressSpinner:
     def __init__(self):
@@ -52,7 +51,8 @@ async def main():
     parser.add_argument('--url', help='URL to crawl', required=False)
     parser.add_argument('--depth', type=int, default=2, help='Crawl depth')
     parser.add_argument('--browser', action='store_true', help='Use browser for rendering')
-    parser.add_argument('--output-format', choices=['json', 'csv', 'both'], default='json', help='Output format')
+    parser.add_argument('--output-format', choices=['json', 'csv', 'md', 'all'], default='json',
+                      help='Output format (json, csv, md, or all)')
     parser.add_argument('--rate-limit', type=float, default=1.0, help='Requests per second')
     parser.add_argument('--proxies', help='File with proxy list (one per line)')
     parser.add_argument('--user-agents', help='File with user agents (one per line)')
@@ -102,6 +102,7 @@ async def main():
         print(f"  • Rate limit: {args.rate_limit} req/sec")
         print(f"  • Robots.txt: {'✅' if args.respect_robots else '❌'}")
         print(f"  • Proxy enabled: {'✅' if args.proxies else '❌'}")
+        print(f"  • Output format: {args.output_format}")
 
         spinner.update_status(f"Crawling {url}...")
         start_time = time.time()
@@ -130,13 +131,17 @@ async def main():
             os.makedirs("scraped_output", exist_ok=True)
             base_filename = f"scraped_output/{urlparse(url).netloc.replace('.', '_')}_{timestamp}"
 
-            if args.output_format in ('json', 'both'):
+            if args.output_format in ('json', 'all'):
                 json_file = await data_exporter.export_to_json(result, f"{base_filename}.json")
                 print(f"  📊 JSON data saved: {json_file}")
 
-            if args.output_format in ('csv', 'both'):
+            if args.output_format in ('csv', 'all'):
                 csv_file = await data_exporter.export_to_csv(result, f"{base_filename}.csv")
                 print(f"  📈 CSV data saved: {csv_file}")
+
+            if args.output_format in ('md', 'all'):
+                md_file = await data_exporter.export_to_markdown(result, f"{base_filename}.md")
+                print(f"  📝 Markdown data saved: {md_file}")
 
             print("\n📊 Summary Statistics:")
             if isinstance(result, list):
