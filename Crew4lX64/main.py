@@ -46,18 +46,78 @@ class ProgressSpinner:
         sys.stdout.write("\r")
         sys.stdout.flush()
 
-async def main():
+def setup_argument_parser():
     parser = ArgumentParser(description='Advanced Web Crawler')
-    parser.add_argument('--url', help='URL to crawl', required=False)
-    parser.add_argument('--depth', type=int, default=2, help='Crawl depth')
-    parser.add_argument('--browser', action='store_true', help='Use browser for rendering')
-    parser.add_argument('--output-format', choices=['json', 'csv', 'md', 'all'], default='json',
-                      help='Output format (json, csv, md, or all)')
-    parser.add_argument('--rate-limit', type=float, default=1.0, help='Requests per second')
-    parser.add_argument('--proxies', help='File with proxy list (one per line)')
-    parser.add_argument('--user-agents', help='File with user agents (one per line)')
-    parser.add_argument('--respect-robots', action='store_true', help='Respect robots.txt')
-    parser.add_argument('--max-pages', type=int, default=10, help='Maximum pages to crawl with pagination')
+    
+    # Basic Options
+    basic_group = parser.add_argument_group('Basic Options')
+    basic_group.add_argument('--url', help='URL to crawl')
+    basic_group.add_argument('--depth', type=int, default=2, help='Crawl depth (default: 2)')
+    basic_group.add_argument('--output-format', choices=['json', 'csv', 'md', 'all'], default='json',
+                          help='Output format: json, csv, md, or all (default: json)')
+    basic_group.add_argument('--output-dir', default='scraped_output',
+                          help='Output directory (default: scraped_output)')
+
+    # Browser Options
+    browser_group = parser.add_argument_group('Browser Options')
+    browser_group.add_argument('--browser', action='store_true', help='Use browser for rendering')
+    browser_group.add_argument('--headless', action='store_true', help='Run browser in headless mode')
+    browser_group.add_argument('--wait-time', type=float, default=2.0,
+                             help='Wait time for dynamic content (default: 2.0s)')
+    browser_group.add_argument('--scroll', action='store_true', 
+                             help='Enable auto-scrolling for dynamic loading')
+
+    # Rate Limiting Options
+    rate_group = parser.add_argument_group('Rate Limiting Options')
+    rate_group.add_argument('--rate-limit', type=float, default=1.0,
+                          help='Requests per second (default: 1.0)')
+    rate_group.add_argument('--retry-count', type=int, default=3,
+                          help='Number of retries for failed requests (default: 3)')
+    rate_group.add_argument('--retry-delay', type=float, default=1.0,
+                          help='Delay between retries in seconds (default: 1.0)')
+
+    # Proxy Options
+    proxy_group = parser.add_argument_group('Proxy Options')
+    proxy_group.add_argument('--proxies', help='File with proxy list (one per line)')
+    proxy_group.add_argument('--proxy-type', choices=['http', 'socks5'], default='http',
+                          help='Proxy type (default: http)')
+    proxy_group.add_argument('--proxy-timeout', type=float, default=10.0,
+                          help='Proxy timeout in seconds (default: 10.0)')
+
+    # Authentication Options
+    auth_group = parser.add_argument_group('Authentication Options')
+    auth_group.add_argument('--user-agents', help='File with user agents (one per line)')
+    auth_group.add_argument('--cookies', help='File with cookies in JSON format')
+    auth_group.add_argument('--headers', help='File with custom headers in JSON format')
+
+    # Crawling Options
+    crawl_group = parser.add_argument_group('Crawling Options')
+    crawl_group.add_argument('--respect-robots', action='store_true',
+                          help='Respect robots.txt rules')
+    crawl_group.add_argument('--max-pages', type=int, default=10,
+                          help='Maximum pages to crawl with pagination (default: 10)')
+    crawl_group.add_argument('--include-pattern', 
+                          help='Only crawl URLs matching this pattern (regex)')
+    crawl_group.add_argument('--exclude-pattern',
+                          help='Skip URLs matching this pattern (regex)')
+    crawl_group.add_argument('--allow-subdomains', action='store_true',
+                          help='Allow crawling subdomains')
+
+    # Export Options
+    export_group = parser.add_argument_group('Export Options')
+    export_group.add_argument('--compress', action='store_true',
+                           help='Compress output files')
+    export_group.add_argument('--pretty', action='store_true',
+                           help='Pretty print JSON output')
+    export_group.add_argument('--timestamp', action='store_true',
+                           help='Add timestamp to output filenames')
+    export_group.add_argument('--export-links', action='store_true',
+                           help='Export links to separate file')
+    
+    return parser
+
+async def main():
+    parser = setup_argument_parser()
     args = parser.parse_args()
     
     print(ascii_art)
@@ -92,7 +152,15 @@ async def main():
             respect_robots=args.respect_robots,
             rate_limit=args.rate_limit,
             use_proxies=bool(args.proxies),
-            headless=True
+            headless=args.headless,
+            wait_time=args.wait_time,
+            auto_scroll=args.scroll,
+            retry_count=args.retry_count,
+            retry_delay=args.retry_delay,
+            proxy_timeout=args.proxy_timeout,
+            include_pattern=args.include_pattern,
+            exclude_pattern=args.exclude_pattern,
+            allow_subdomains=args.allow_subdomains
         )
 
         url = args.url or input("\nEnter URL to crawl: ")
@@ -103,6 +171,13 @@ async def main():
         print(f"  • Robots.txt: {'✅' if args.respect_robots else '❌'}")
         print(f"  • Proxy enabled: {'✅' if args.proxies else '❌'}")
         print(f"  • Output format: {args.output_format}")
+        if args.browser:
+            print(f"  • Headless mode: {'✅' if args.headless else '❌'}")
+            print(f"  • Wait time: {args.wait_time}s")
+            print(f"  • Auto-scroll: {'✅' if args.scroll else '❌'}")
+        if args.proxies:
+            print(f"  • Proxy type: {args.proxy_type}")
+            print(f"  • Proxy timeout: {args.proxy_timeout}s")
 
         spinner.update_status(f"Crawling {url}...")
         start_time = time.time()
@@ -127,9 +202,9 @@ async def main():
 
         if result:
             spinner.update_status("Saving results...")
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            os.makedirs("scraped_output", exist_ok=True)
-            base_filename = f"scraped_output/{urlparse(url).netloc.replace('.', '_')}_{timestamp}"
+            timestamp = time.strftime("%Y%m%d_%H%M%S") if args.timestamp else ""
+            os.makedirs(args.output_dir, exist_ok=True)
+            base_filename = f"{args.output_dir}/{urlparse(url).netloc.replace('.', '_')}{f'_{timestamp}' if timestamp else ''}"
 
             if args.output_format in ('json', 'all'):
                 json_file = await data_exporter.export_to_json(result, f"{base_filename}.json")
@@ -142,6 +217,13 @@ async def main():
             if args.output_format in ('md', 'all'):
                 md_file = await data_exporter.export_to_markdown(result, f"{base_filename}.md")
                 print(f"  📝 Markdown data saved: {md_file}")
+
+            if args.export_links:
+                links_file = f"{base_filename}_links.txt"
+                with open(links_file, 'w', encoding='utf-8') as f:
+                    for link in result.get('links', []):
+                        f.write(f"{link.get('url')}\n")
+                print(f"  🔗 Links exported: {links_file}")
 
             print("\n📊 Summary Statistics:")
             if isinstance(result, list):

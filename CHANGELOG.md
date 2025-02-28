@@ -40,6 +40,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced rate limiting algorithm
 - Strengthened data protection measures
 
+## [1.2.1] - 2025-03-01
+
+### Fixed
+- Resolved issues with browser mode in web crawler
+  - Fixed "await expression" errors
+  - Improved browser setup and navigation
+  - Correctly handled async/sync operations
+  - Enhanced error handling and resource cleanup
+
 ## [1.1.0] - 2025-02-28
 
 ### Added

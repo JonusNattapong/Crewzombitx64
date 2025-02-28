@@ -1,177 +1,246 @@
 import json
 import csv
-import logging
-from typing import Dict
-from datetime import datetime
+import os
+from typing import Dict, List, Any
+import time
 from urllib.parse import urlparse
+import aiohttp
+import asyncio
+import re
 
 class DataExporter:
-    @staticmethod
-    async def export_to_json(data, filename):
+    def __init__(self):
+        self.session = None
+
+    async def _get_file_size(self, url: str) -> str:
+        """Get file size in human readable format"""
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+            
+        try:
+            async with self.session.head(url, allow_redirects=True, timeout=5) as response:
+                size = int(response.headers.get('content-length', 0))
+                for unit in ['B', 'KB', 'MB', 'GB']:
+                    if size < 1024:
+                        return f"{size:.1f} {unit}"
+                    size /= 1024
+                return f"{size:.1f} TB"
+        except:
+            return "Unknown size"
+
+    def _extract_metadata(self, data: Dict) -> Dict:
+        """Extract metadata from JSON-LD"""
+        metadata = {}
+        json_ld = data.get('content', {}).get('json_ld', [])
+        if isinstance(json_ld, list) and json_ld:
+            for item in json_ld:
+                if '@graph' in item:
+                    for node in item['@graph']:
+                        if node.get('@type') == 'Article':
+                            metadata.update({
+                                'title': node.get('headline', ''),
+                                'author': node.get('author', {}).get('name', ''),
+                                'date_published': node.get('datePublished', ''),
+                                'date_modified': node.get('dateModified', ''),
+                                'word_count': node.get('wordCount', ''),
+                                'section': node.get('articleSection', []),
+                                'language': node.get('inLanguage', '')
+                            })
+                        elif node.get('@type') == 'Organization':
+                            metadata['publisher'] = node.get('name', '')
+                            
+        return metadata
+
+    def _filter_tracking_pixels(self, images: List[Dict]) -> List[Dict]:
+        """Filter out tracking pixels and small images"""
+        def is_tracking_pixel(img: Dict) -> bool:
+            url = img.get('url', '').lower()
+            return any(x in url for x in ['facebook.com/tr', 'tracking', 'pixel', 'analytics', 'beacon'])
+            
+        return [img for img in images if not is_tracking_pixel(img)]
+
+    async def export_to_markdown(self, data: Dict, filename: str) -> str:
+        """Export data to Markdown file with improved formatting"""
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        metadata = self._extract_metadata(data)
+        
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            # Title
+            title = metadata.get('title') or data.get('content', {}).get('title', 'Untitled Page')
+            f.write(f"# {title}\n\n")
+            
+            # Table of Contents
+            f.write("## 📑 Table of Contents\n")
+            f.write("1. [Meta Information](#meta-information)\n")
+            f.write("2. [Summary](#summary)\n")
+            if metadata.get('section'): f.write("3. [Tags](#tags)\n")
+            f.write("4. [Content](#content)\n")
+            f.write("5. [Links](#links)\n")
+            if data.get('media', {}).get('images'): f.write("6. [Images](#images)\n")
+            if data.get('media', {}).get('videos'): f.write("7. [Videos](#videos)\n")
+            if data.get('media', {}).get('documents'): f.write("8. [Documents](#documents)\n")
+            f.write("\n")
+
+            # Meta Information
+            f.write("## 🔍 Meta Information\n")
+            f.write(f"- **URL**: {data.get('url', 'N/A')}\n")
+            f.write(f"- **Crawled**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"- **Load Time**: {data.get('load_time', 0):.1f} seconds\n")
+            f.write(f"- **Word Count**: {metadata.get('word_count', 'N/A')}\n")
+            if metadata.get('author'): f.write(f"- **Author**: {metadata['author']}\n")
+            if metadata.get('publisher'): f.write(f"- **Publisher**: {metadata['publisher']}\n")
+            if metadata.get('date_published'): f.write(f"- **Published**: {metadata['date_published']}\n")
+            if metadata.get('date_modified'): f.write(f"- **Last Modified**: {metadata['date_modified']}\n")
+            if metadata.get('language'): f.write(f"- **Language**: {metadata['language']}\n")
+            f.write("\n")
+
+            # Tags Section
+            if metadata.get('section'):
+                f.write("## 🏷️ Tags\n")
+                for tag in metadata['section']:
+                    f.write(f"- {tag}\n")
+                f.write("\n")
+
+            # Summary Section
+            f.write("## 📊 Summary\n")
+            internal_links = [link for link in data.get('links', []) if link.get('type') == 'internal']
+            external_links = [link for link in data.get('links', []) if link.get('type') == 'external']
+            f.write(f"- **Total Links**: {len(data.get('links', []))}\n")
+            f.write(f"  - Internal Links: {len(internal_links)}\n")
+            f.write(f"  - External Links: {len(external_links)}\n")
+            f.write(f"- **Media**:\n")
+            
+            # Filter tracking pixels from images
+            images = self._filter_tracking_pixels(data.get('media', {}).get('images', []))
+            f.write(f"  - Images: {len(images)}\n")
+            
+            videos = data.get('media', {}).get('videos', [])
+            content_videos = [v for v in videos if not any(x in v.get('url', '') for x in ['gtm', 'analytics', 'tracking'])]
+            f.write(f"  - Videos: {len(content_videos)}\n")
+            
+            if 'documents' in data.get('media', {}):
+                f.write(f"  - Documents: {len(data.get('media', {}).get('documents', []))}\n")
+            f.write("\n")
+
+            # Content Section
+            f.write("## 📝 Content\n")
+            for content_type, content in data.get('content', {}).items():
+                if content and content_type not in ['title', 'author', 'date_published', 'date_modified', 'word_count']:
+                    f.write(f"### {content_type.replace('_', ' ').title()}\n")
+                    if isinstance(content, (dict, list)):
+                        f.write("```json\n")
+                        f.write(json.dumps(content, indent=2, ensure_ascii=False))
+                        f.write("\n```\n\n")
+                    else:
+                        f.write(f"{content}\n\n")
+
+            # Links Section
+            f.write("## 🔗 Links\n")
+            if internal_links:
+                f.write("### Internal Links\n")
+                sorted_internal = sorted(internal_links, 
+                                      key=lambda x: x.get('text', '').strip() or x.get('title', ''))
+                for link in sorted_internal:
+                    text = link.get('text', '').strip() or link.get('title', '')
+                    url = link.get('url', '')
+                    f.write(f"- [{text}]({url})\n")
+                f.write("\n")
+            
+            if external_links:
+                f.write("### External Links\n")
+                for link in sorted(external_links, 
+                                 key=lambda x: x.get('text', '').strip() or x.get('title', '')):
+                    text = link.get('text', '').strip() or link.get('title', '')
+                    url = link.get('url', '')
+                    domain = urlparse(url).netloc
+                    f.write(f"- [{text}]({url}) `{domain}`\n")
+                f.write("\n")
+
+            # Images Section with sizes
+            if images:
+                f.write("## 🖼️ Images\n")
+                for img in images:
+                    alt = img.get('alt', '') or img.get('title', '')
+                    size = await self._get_file_size(img['url'])
+                    f.write(f"![{alt}]({img['url']}) _{size}_\n")
+                f.write("\n")
+
+            # Videos Section with types
+            if content_videos:
+                f.write("## 🎥 Videos\n")
+                for video in content_videos:
+                    title = video.get('title', '')
+                    video_type = video.get('type', 'default')
+                    if video_type in ('youtube', 'vimeo'):
+                        f.write(f"- 🎬 [{title or 'Video'}]({video['url']}) `{video_type}`\n")
+                    else:
+                        size = await self._get_file_size(video['url'])
+                        f.write(f"- 🎥 [{title or 'Video'}]({video['url']}) _{size}_\n")
+                f.write("\n")
+
+            # Documents Section with sizes
+            if data.get('media', {}).get('documents'):
+                f.write("## 📄 Documents\n")
+                for doc in data['media']['documents']:
+                    doc_type = doc.get('type', '').upper()
+                    text = doc.get('text', '') or 'Document'
+                    size = await self._get_file_size(doc['url'])
+                    f.write(f"- [{text}]({doc['url']}) `{doc_type}` _{size}_\n")
+
+            # Footer
+            crawl_time = data.get('load_time', 0)
+            f.write("\n---\n")
+            f.write(f"Generated by CrewColabX64 Crawler (Crawl time: {crawl_time:.1f}s)\n")
+
+        if self.session:
+            await self.session.close()
+            self.session = None
+
         return filename
 
-    @staticmethod
-    async def export_to_csv(data, filename):
-        flattened_data = DataExporter._flatten_data(data)
+    async def export_to_json(self, data: Dict, filename: str, pretty: bool = True) -> str:
+        """Export data to JSON file"""
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w', encoding='utf-8') as f:
+            if pretty:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            else:
+                json.dump(data, f, ensure_ascii=False)
+        return filename
 
-        with open(filename, 'w', newline='', encoding='utf-8') as f:
-            if flattened_data:
-                writer = csv.DictWriter(f, fieldnames=flattened_data[0].keys())
+    async def export_to_csv(self, data: Dict, filename: str) -> str:
+        """Export data to CSV file"""
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
+        # Flatten the data structure
+        flattened_data = []
+        if isinstance(data, dict):
+            flattened_data.append(self._flatten_dict(data))
+        elif isinstance(data, list):
+            for item in data:
+                flattened_data.append(self._flatten_dict(item))
+
+        if flattened_data:
+            fieldnames = flattened_data[0].keys()
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(flattened_data)
         return filename
 
-    @staticmethod
-    async def export_to_markdown(data, filename):
-        """Export data to Markdown format."""
-        md_content = []
-        
-        # Handle single page or multiple pages
-        if isinstance(data, list):
-            for page in data:
-                md_content.extend(DataExporter._page_to_markdown(page))
-                md_content.append("\n---\n")  # Page separator
-        else:
-            md_content.extend(DataExporter._page_to_markdown(data))
-
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(md_content))
-        return filename
-
-    @staticmethod
-    def _page_to_markdown(page):
-        md = []
-        
-        # Header & Meta Information
-        title = page.get('content', {}).get('title', urlparse(page.get('url', '')).path.split('/')[-1] or 'Untitled Page')
-        md.append(f"# {title}")
-        md.append(f"URL: {page.get('url', 'N/A')}")
-        timestamp = page.get('timestamp')
-        if timestamp:
-            crawl_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            md.append(f"Crawled: {crawl_time}")
-        md.append("")
-
-        # Summary section
-        md.append("## 📊 Summary")
-        links_count = len(page.get('links', []))
-        internal_links = sum(1 for link in page.get('links', []) if link.get('type') == 'internal')
-        external_links = links_count - internal_links
-        images_count = len(page.get('media', {}).get('images', []))
-        videos_count = len(page.get('media', {}).get('videos', []))
-        docs_count = len(page.get('media', {}).get('documents', []))
-        
-        md.append(f"- Total Links: {links_count}")
-        md.append(f"  - Internal Links: {internal_links}")
-        md.append(f"  - External Links: {external_links}")
-        md.append(f"- Images: {images_count}")
-        md.append(f"- Videos: {videos_count}")
-        md.append(f"- Documents: {docs_count}")
-        md.append("")
-
-        # Content Section
-        if 'content' in page:
-            md.append("## 📝 Content")
-            content = page['content']
-            if isinstance(content, dict):
-                for key, value in content.items():
-                    if key != 'title':  # Skip title as it's already used
-                        md.append(f"### {key.replace('_', ' ').title()}")
-                        md.append("```json")
-                        md.append(json.dumps(value, indent=2, ensure_ascii=False))
-                        md.append("```")
-                        md.append("")
-            else:
-                md.append(str(content))
-            md.append("")
-
-        # Links Section
-        if page.get('links'):
-            md.append("## 🔗 Links")
-            
-            # Internal Links
-            internal_links = [link for link in page['links'] if link.get('type') == 'internal']
-            if internal_links:
-                md.append("### Internal Links")
-                for link in internal_links:
-                    text = link.get('text', 'No text')
-                    url = link.get('url', '#')
-                    md.append(f"- [{text}]({url})")
-                md.append("")
-
-            # External Links
-            external_links = [link for link in page['links'] if link.get('type') == 'external']
-            if external_links:
-                md.append("### External Links")
-                for link in external_links:
-                    text = link.get('text', 'No text')
-                    url = link.get('url', '#')
-                    md.append(f"- [{text}]({url})")
-                md.append("")
-
-        # Media Section
-        if 'media' in page:
-            media = page['media']
-            
-            # Images
-            if media.get('images'):
-                md.append("## 🖼️ Images")
-                for img in media['images']:
-                    alt = img.get('alt', 'No description')
-                    url = img.get('url', '')
-                    if url:
-                        md.append(f"![{alt}]({url})")
-                        if img.get('title'):
-                            md.append(f"*{img['title']}*")
-                md.append("")
-
-            # Videos
-            if media.get('videos'):
-                md.append("## 🎥 Videos")
-                for video in media['videos']:
-                    if video.get('type') == 'youtube':
-                        md.append(f"- 📺 YouTube: [{video.get('title', 'Video')}]({video.get('url', '')})")
-                    elif video.get('type') == 'vimeo':
-                        md.append(f"- 🎬 Vimeo: [{video.get('title', 'Video')}]({video.get('url', '')})")
-                    else:
-                        md.append(f"- 🎥 Video: {video.get('url', '')}")
-                md.append("")
-
-            # Documents
-            if media.get('documents'):
-                md.append("## 📄 Documents")
-                for doc in media['documents']:
-                    text = doc.get('text', 'Document')
-                    url = doc.get('url', '')
-                    doc_type = doc.get('type', 'unknown').upper()
-                    md.append(f"- [{text}]({url}) ({doc_type})")
-                md.append("")
-
-        return md
-
-    @staticmethod
-    def _flatten_data(data):
-        if isinstance(data, list):
-            return [DataExporter._flatten_dict(item) for item in data]
-        else:
-            return [DataExporter._flatten_dict(data)]
-
-    @staticmethod
-    def _flatten_dict(d, parent_key='', sep='_'):
+    def _flatten_dict(self, d: Dict, parent_key: str = '', sep: str = '_') -> Dict:
+        """Flatten nested dictionary"""
         items = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
-
             if isinstance(v, dict):
-                items.extend(DataExporter._flatten_dict(v, new_key, sep).items())
+                items.extend(self._flatten_dict(v, new_key, sep).items())
             elif isinstance(v, list):
-                if all(isinstance(x, dict) for x in v):
-                    for i, item in enumerate(v):
-                        items.extend(DataExporter._flatten_dict(item, f"{new_key}{sep}{i}", sep).items())
+                if v and isinstance(v[0], dict):
+                    # Handle list of dictionaries
+                    items.append((new_key, json.dumps(v)))
                 else:
-                    items.append((new_key, ', '.join(str(x) for x in v)))
+                    items.append((new_key, ', '.join(map(str, v))))
             else:
                 items.append((new_key, v))
         return dict(items)
