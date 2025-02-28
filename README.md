@@ -33,6 +33,7 @@
   - [1. Standard Version (No API Required)](#1-standard-version-no-api-required)
   - [2. API Version (Requires Mistral API Key)](#2-api-version-requires-mistral-api-key)
   - [Web Interface](#web-interface)
+  - [3. Advanced Version (Crew4lX64.py)](#3-advanced-version-crew4lx64py)
 - [Publishing to GitHub Packages](#publishing-to-github-packages)
 - [📤 Output Directory Structure](#-output-directory-structure)
 - [🔍 Features in Detail](#-features-in-detail)
@@ -304,6 +305,56 @@ To start the web interface, run:
 ```bash
 python -m zombitx64.app
 ```
+
+### 3. Advanced Version (Crew4lX64.py)
+
+```bash
+python Crew4lX64/main.py --url <target_url> [options]
+```
+
+**Features**:
+- Advanced web scraping with browser integration
+- Markdown and structured data extraction
+- Comprehensive media and content extraction
+- Enhanced security and proxy management
+- Adaptive rate limiting
+
+**Options**:
+- `--url <target_url>`:  Specify the URL to crawl. (Required)
+- `--depth <integer>`:  Specify the maximum depth for crawling. (Optional, default: 1)
+- `--browser`: Enable browser mode for dynamic content rendering. (Optional)
+- `--headless`: Run browser in headless mode (no GUI). (Optional, requires `--browser`)
+- `--scroll`: Enable auto-scrolling for full page load. (Optional, requires `--browser`)
+- `--output-format <format>`:  Specify output format ('json' or 'md'). (Optional, default: 'json')
+- `--output-file <filename>`: Specify the output filename. (Optional, default: based on URL and timestamp)
+- `--rate-limit <float>`:  Set requests per second rate limit. (Optional, default: 1.0)
+- `--wait-time <float>`:  Set wait time between requests in seconds. (Optional, default: 0.5)
+- `--proxy <proxy_url>`:  Specify a proxy URL. (Optional)
+- `--user-agent <user_agent>`:  Specify a custom user agent. (Optional)
+- `--timestamp`:  Include timestamp in output filename. (Optional)
+- `--verbose`:  Enable verbose output. (Optional)
+
+**Examples**:
+
+- Crawl a website and save output in Markdown format:
+  ```bash
+  python Crew4lX64/main.py --url https://example.com --output-format md
+  ```
+
+- Crawl a website in browser mode with auto-scrolling and headless option:
+  ```bash
+  python Crew4lX64/main.py --url https://example.com --browser --headless --scroll
+  ```
+
+- Crawl with depth 2 and rate limit of 2 requests per second:
+  ```bash
+  python Crew4lX64/main.py --url https://example.com --depth 2 --rate-limit 2.0
+  ```
+
+- Crawl and save output to a specific file:
+  ```bash
+  python Crew4lX64/main.py --url https://example.com --output-file my_output.json
+  ```
 
 ## Publishing to GitHub Packages
 
