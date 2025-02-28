@@ -1,4 +1,4 @@
-# ZombithX64 - Advanced Web Scraping Tool
+# zombitx64 - Advanced Web Scraping Tool
 
 <div align="center">
 
@@ -6,15 +6,20 @@
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub Package](https://img.shields.io/badge/GitHub-Package-green.svg)](https://github.com/features/packages)
 
 *A powerful web scraping and content analysis tool with AI integration*
 
 </div>
 
 ## 📋 Table of Contents
-- [ZombithX64 - Advanced Web Scraping Tool](#zombithx64---advanced-web-scraping-tool)
+- [zombitx64 - Advanced Web Scraping Tool](#zombitx64---advanced-web-scraping-tool)
   - [📋 Table of Contents](#-table-of-contents)
   - [Overview](#overview)
+  - [📦 Releases](#-releases)
+    - [Version 1.0.0 (Latest)](#version-100-latest)
+    - [Version 0.9.0 (Beta)](#version-090-beta)
+    - [Version 0.5.0 (Alpha)](#version-050-alpha)
   - [🚀 Key Features](#-key-features)
     - [🌐 Web Scraping Capabilities](#-web-scraping-capabilities)
     - [📝 Content Processing](#-content-processing)
@@ -23,6 +28,14 @@
   - [📁 Project Structure](#-project-structure)
     - [Core Components](#core-components)
   - [🛠️ Setup and Usage](#️-setup-and-usage)
+    - [Installation Options](#installation-options)
+      - [1. Install via GitHub Packages](#1-install-via-github-packages)
+      - [2. Install from Source](#2-install-from-source)
+    - [Environment Setup](#environment-setup)
+    - [Running the Tool](#running-the-tool)
+      - [Command Line Interface](#command-line-interface)
+      - [Web Interface](#web-interface)
+    - [Publishing to GitHub Packages](#publishing-to-github-packages)
   - [📤 Output Directory Structure](#-output-directory-structure)
   - [🔍 Features in Detail](#-features-in-detail)
     - [GitHub Repository Handling](#github-repository-handling)
@@ -36,7 +49,29 @@
   - [📄 License](#-license)
 
 ## Overview
-ZombithX64 is a comprehensive web scraping and content analysis tool that combines multiple approaches to extract, process, and analyze web content. The project features both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for content summarization.
+zombitx64 is a comprehensive web scraping and content analysis tool that combines multiple approaches to extract, process, and analyze web content. The project features both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for content summarization.
+
+## 📦 Releases
+
+### Version 1.0.0 (Latest)
+- Initial release with core functionality
+- Web scraping capabilities
+- Mistral AI integration
+- Web interface implementation
+- GitHub repository handling
+- JSON and Markdown export
+
+### Version 0.9.0 (Beta)
+- Beta release with core features
+- Basic web scraping
+- Content processing pipeline
+- Command-line interface
+
+### Version 0.5.0 (Alpha)
+- Alpha release for testing
+- Basic HTML parsing
+- File output handling
+- Error handling implementation
 
 ## 🚀 Key Features
 
@@ -92,39 +127,75 @@ ZombithX64 is a comprehensive web scraping and content analysis tool that combin
 
 ## 🛠️ Setup and Usage
 
-1. **Installation**
-   ```bash
-   # Clone the repository
-   git clone [repository-url]
-   cd [repository-name]
+### Installation Options
 
-   # Install required packages
-   pip install -r requirements.txt
-   ```
+#### 1. Install via GitHub Packages
+```bash
+# Configure pip to use GitHub Packages
+pip install --upgrade pip
+pip config set global.index-url https://npm.pkg.github.com
 
-2. **Environment Setup**
-   - Create a `.env` file in the project root
-   - Add your Mistral AI API key:
-     ```
-     MISTRAL_API_KEY=your_api_key_here
-     ```
+# Install the package
+pip install zombitx64
+```
 
-3. **Running the Tool**
+To authenticate with GitHub Packages, you'll need to:
+1. Create a Personal Access Token (PAT) with `read:packages` scope
+2. Configure pip to use your PAT:
+```bash
+pip config set global.username YOUR_GITHUB_USERNAME
+pip config set global.password YOUR_GITHUB_PAT
+```
 
-   a. Command Line Interface:
-   ```bash
-   # Basic scraping
-   python CrewNormalX64.py
+#### 2. Install from Source
+```bash
+# Clone the repository
+git clone [repository-url]
+cd [repository-name]
 
-   # Advanced scraping with AI
-   python CrewAPIX64.py
-   ```
+# Install required packages
+pip install -r requirements.txt
+```
 
-   b. Web Interface:
-   ```bash
-   # Start the web server
-   python app.py
-   ```
+### Environment Setup
+- Create a `.env` file in the project root
+- Add your Mistral AI API key:
+  ```
+  MISTRAL_API_KEY=your_api_key_here
+  ```
+
+### Running the Tool
+
+#### Command Line Interface
+```bash
+# Basic scraping
+python -m zombitx64.normal
+
+# Advanced scraping with AI
+python -m zombitx64.api
+```
+
+#### Web Interface
+```bash
+# Start the web server
+python -m zombitx64.app
+```
+
+### Publishing to GitHub Packages
+For contributors who want to publish new versions:
+
+1. Update version in `setup.py`
+2. Build the package:
+```bash
+python -m build
+```
+
+3. Publish to GitHub Packages:
+```bash
+python -m twine upload --repository github dist/*
+```
+
+Note: You need appropriate permissions and a PAT with `write:packages` scope to publish.
 
 ## 📤 Output Directory Structure
 ```
