@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2025-02-28
 
 ### Added
+- CrewColabX64.ipynb: Google Colab integration
+  - Easy-to-use notebook interface
+  - Cloud-based execution support
+  - Interactive examples and tutorials
 - Crew4lX64.py: Advanced web scraping implementation
   - LLM-powered schema generation using OpenAI/Ollama
   - Automatic CSS and XPath schema generation

@@ -56,6 +56,7 @@
   - [⚠️ Important Notes](#️-important-notes)
   - [🔄 Future Improvements](#-future-improvements)
   - [👥 Contributing](#-contributing)
+  - [Star History](#star-history)
   - [📄 License](#-license)
 
 ## Overview
@@ -122,7 +123,14 @@ zombitx64 is a comprehensive web scraping and content analysis tool that combine
 ## 📁 Project Structure
 
 ### Core Components
-1. **CrewNormalX64.py**
+1. **CrewColabX64.ipynb**
+   - Google Colab integration
+   - Interactive notebook interface
+   - Cloud-based execution support
+   - Tutorial and example workflows
+   - Built-in documentation
+   
+2. **CrewNormalX64.py**
    - Basic web scraping functionality
    - HTML content extraction
    - Markdown formatting
@@ -349,6 +357,10 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=deepseek-ai/awesome-deepseek-integration,JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#deepseek-ai/awesome-deepseek-integration&JonusNattapong/Crewzombitx64&Date)
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
