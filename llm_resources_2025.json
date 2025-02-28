@@ -1,0 +1,125 @@
+{
+  "title": "Top AI/LLM Learning Resources in 2025",
+  "overview": "A comprehensive guide for learning about Large Language Models (LLMs) in 2025, organized into three main tracks.",
+  "mainTracks": {
+    "LLM_Fundamentals": {
+      "Mathematics_for_Machine_Learning": {
+        "topics": [
+          "Linear Algebra",
+          "Calculus",
+          "Probability and Statistics"
+        ]
+      },
+      "Python_for_Machine_Learning": {
+        "topics": [
+          "Basic Python and Data Science Libraries",
+          "Machine Learning Libraries",
+          "Data Preprocessing"
+        ]
+      },
+      "Neural_Networks": {
+        "topics": [
+          "Architecture and Components",
+          "Training and Optimization",
+          "Preventing Overfitting"
+        ]
+      },
+      "Natural_Language_Processing": {
+        "topics": [
+          "Text Preprocessing",
+          "Feature Extraction",
+          "Word Embeddings",
+          "Recurrent Neural Networks"
+        ]
+      }
+    },
+    "LLM_Scientist": {
+      "LLM_Architecture": {
+        "topics": [
+          "Transformer Architecture",
+          "Tokenization",
+          "Attention Mechanisms",
+          "Sampling Strategies"
+        ]
+      },
+      "Pre_training_Models": {
+        "topics": [
+          "Data Preparation",
+          "Distributed Training",
+          "Optimization Techniques",
+          "Monitoring and Metrics"
+        ]
+      },
+      "Fine_tuning_and_Alignment": {
+        "topics": [
+          "Supervised Fine-tuning (SFT)",
+          "Direct Preference Optimization (DPO)",
+          "Quality Control and Evaluation",
+          "Model Quantization"
+        ]
+      },
+      "Advanced_Topics": {
+        "topics": [
+          "Model Merging",
+          "Multimodal Models",
+          "Interpretability",
+          "Test-time Compute Scaling"
+        ]
+      }
+    },
+    "LLM_Engineer": {
+      "Running_LLMs": {
+        "topics": [
+          "API Integration",
+          "Local Deployment",
+          "Prompt Engineering",
+          "Output Structuring"
+        ]
+      },
+      "Vector_Storage_and_RAG": {
+        "topics": [
+          "Document Processing",
+          "Embedding Models",
+          "Vector Databases",
+          "Retrieval Techniques"
+        ]
+      },
+      "Deployment": {
+        "topics": [
+          "Local and Edge Deployment",
+          "Server Infrastructure",
+          "Performance Optimization",
+          "Security Considerations"
+        ]
+      }
+    }
+  },
+  "keyResources": {
+    "Learning_Platforms": [
+      "3Blue1Brown",
+      "Fast.ai",
+      "freeCodeCamp",
+      "Khan Academy"
+    ],
+    "Tools": [
+      "Hugging Face",
+      "LangChain",
+      "LlamaIndex",
+      "Transformers"
+    ],
+    "Frameworks": [
+      "PyTorch",
+      "TensorFlow",
+      "JAX"
+    ],
+    "Documentation": [
+      "Model Cards",
+      "Research Papers",
+      "Implementation Guides"
+    ]
+  },
+  "source": {
+    "organization": "Origins AI",
+    "url": "https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/"
+  }
+}

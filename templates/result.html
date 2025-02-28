@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scraping Result</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Scraping Result for {{ url }}</h1>
+    <h2>{{ content.title }}</h2>
+    <p><strong>URL:</strong> {{ content.metadata.url }}</p>
+    <p><strong>Crawled at:</strong> {{ content.metadata.crawled_at }}</p>
+    
+    <h3>Content Preview</h3>
+    <pre>{{ content.text }}</pre>
+    
+    <h3>Downloads</h3>
+    <p><a href="/download/{{ json_file }}">Download JSON</a></p>
+    <p><a href="/download/{{ md_file }}">Download Markdown</a></p>
+    
+    <p><a href="/">Scrape another URL</a></p>
+</body>
+</html>

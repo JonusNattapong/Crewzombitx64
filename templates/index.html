@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Scraper</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .error { color: red; }
+        input[type="text"] { width: 300px; padding: 5px; }
+        input[type="submit"] { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Web Scraper</h1>
+    <form method="POST">
+        <label for="url">Enter URL to scrape:</label><br>
+        <input type="text" id="url" name="url" placeholder="https://example.com"><br><br>
+        <input type="submit" value="Scrape">
+    </form>
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
