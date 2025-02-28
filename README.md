@@ -56,7 +56,7 @@
 
 ## Overview
 
-**zombitx64** is a comprehensive web scraping and content analysis tool designed to extract, process, and analyze web content efficiently. It supports both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for advanced content summarization.
+**Crewzombitx64** is a comprehensive web scraping and content analysis tool designed to extract, process, and analyze web content efficiently. It supports both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for advanced content summarization.
 
 **Key Features:**
 - Intelligent content extraction with BeautifulSoup4
