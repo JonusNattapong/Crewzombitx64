@@ -1,5 +1,3 @@
-# zombitx64 - Advanced Web Scraping Tool
-
 <div align="center">
 
 ![Project Logo](./public/Zom.png)
@@ -13,88 +11,179 @@
 </div>
 
 ## 📋 Table of Contents
-- [zombitx64 - Advanced Web Scraping Tool](#zombitx64---advanced-web-scraping-tool)
-  - [📋 Table of Contents](#-table-of-contents)
-  - [Overview](#overview)
-  - [📦 Releases](#-releases)
-    - [Version 1.0.0 (Latest)](#version-100-latest)
-    - [Version 0.9.0 (Beta)](#version-090-beta)
-    - [Version 0.5.0 (Alpha)](#version-050-alpha)
-  - [🚀 Key Features](#-key-features)
-    - [🌐 Web Scraping Capabilities](#-web-scraping-capabilities)
-    - [📝 Content Processing](#-content-processing)
-    - [🤖 Content Analysis](#-content-analysis)
-    - [📊 Output Formats](#-output-formats)
-  - [📁 Project Structure](#-project-structure)
-    - [Core Components](#core-components)
-  - [🛠️ Setup and Usage](#️-setup-and-usage)
-    - [Installation Options](#installation-options)
-      - [1. Install via GitHub Packages](#1-install-via-github-packages)
-      - [2. Install from Source](#2-install-from-source)
-    - [Environment Setup](#environment-setup)
-      - [For API Version (CrewAPIX64)](#for-api-version-crewapix64)
-      - [For Standard Version (CrewNormalX64)](#for-standard-version-crewnormalx64)
-    - [Running the Tool](#running-the-tool)
-      - [1. Standard Version (No API Required)](#1-standard-version-no-api-required)
-      - [2. API Version (Requires Mistral API Key)](#2-api-version-requires-mistral-api-key)
-      - [Web Interface](#web-interface)
-    - [Publishing to GitHub Packages](#publishing-to-github-packages)
-  - [📤 Output Directory Structure](#-output-directory-structure)
-  - [🔍 Features in Detail](#-features-in-detail)
-    - [Advanced Scraping Capabilities (Crew4lX64.py)](#advanced-scraping-capabilities-crew4lx64py)
-      - [📝 Markdown Generation](#-markdown-generation)
-      - [📊 Structured Data Extraction](#-structured-data-extraction)
-      - [🌐 Browser Integration](#-browser-integration)
-      - [🔎 Media and Content Extraction](#-media-and-content-extraction)
-    - [GitHub Repository Handling](#github-repository-handling)
-    - [Content Processing Pipeline](#content-processing-pipeline)
-    - [Error Handling](#error-handling)
-  - [🤖 Content Analysis](#-content-analysis-1)
-    - [API Version (CrewAPIX64)](#api-version-crewapix64)
-    - [Standard Version (CrewNormalX64)](#standard-version-crewnormalx64)
-  - [🌐 Web Interface Features](#-web-interface-features)
-  - [⚠️ Important Notes](#️-important-notes)
-  - [🔄 Future Improvements](#-future-improvements)
-  - [👥 Contributing](#-contributing)
-  - [Star History](#star-history)
-  - [📄 License](#-license)
+
+- [📋 Table of Contents](#-table-of-contents)
+- [Overview](#overview)
+- [📦 Releases](#-releases)
+  - [Version 1.2.0 (Latest)](#version-120-latest)
+  - [Version 1.1.0](#version-110)
+  - [Version 1.0.0](#version-100)
+  - [Version 0.9.0 (Beta)](#version-090-beta)
+  - [Version 0.5.0 (Alpha)](#version-050-alpha)
+- [🚀 Key Features](#-key-features)
+  - [🌐 Web Scraping Capabilities](#-web-scraping-capabilities)
+  - [🔒 Security and Compliance](#-security-and-compliance)
+  - [📝 Content Processing](#-content-processing)
+  - [🤖 Content Analysis](#-content-analysis)
+  - [📊 Output Formats](#-output-formats)
+- [📁 Project Structure](#-project-structure)
+  - [Core Components](#core-components)
+- [Installation](#installation)
+- [Running the Tool](#running-the-tool)
+  - [1. Standard Version (No API Required)](#1-standard-version-no-api-required)
+  - [2. API Version (Requires Mistral API Key)](#2-api-version-requires-mistral-api-key)
+  - [Web Interface](#web-interface)
+- [Publishing to GitHub Packages](#publishing-to-github-packages)
+- [📤 Output Directory Structure](#-output-directory-structure)
+- [🔍 Features in Detail](#-features-in-detail)
+  - [Advanced Scraping Capabilities (Crew4lX64.py)](#advanced-scraping-capabilities-crew4lx64py)
+    - [📝 Markdown Generation](#-markdown-generation)
+    - [📊 Structured Data Extraction](#-structured-data-extraction)
+    - [🌐 Browser Integration](#-browser-integration)
+    - [🔎 Media and Content Extraction](#-media-and-content-extraction)
+  - [GitHub Repository Handling](#github-repository-handling)
+  - [Content Processing Pipeline](#content-processing-pipeline)
+  - [Error Handling](#error-handling)
+- [🤖 Content Analysis](#-content-analysis-1)
+  - [API Version (CrewAPIX64)](#api-version-crewapix64)
+  - [Standard Version (CrewNormalX64)](#standard-version-crewnormalx64)
+- [🌐 Web Interface Features](#-web-interface-features)
+- [⚠️ Important Notes](#️-important-notes)
+- [🔄 Future Improvements](#-future-improvements)
+- [👥 Contributing](#-contributing)
+- [Star History](#star-history)
+- [📄 License](#-license)
 
 ## Overview
-zombitx64 is a comprehensive web scraping and content analysis tool that combines multiple approaches to extract, process, and analyze web content. The project features both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for content summarization.
+
+**zombitx64** is a comprehensive web scraping and content analysis tool designed to extract, process, and analyze web content efficiently. It supports both command-line and web-based interfaces, with special handling for GitHub repositories and integration with Mistral AI for advanced content summarization.
+
+**Key Features:**
+- Intelligent content extraction with BeautifulSoup4
+- Advanced proxy management and rate limiting
+- Robust security and compliance features
+- Multiple output formats (JSON, Markdown)
+- Integration with Mistral AI for content analysis
+- User-friendly web interface for easy access and configuration
 
 ## 📦 Releases
 
-### Version 1.0.0 (Latest)
-- Initial release with core functionality
-- Web scraping capabilities
-- Mistral AI integration
-- Web interface implementation
-- GitHub repository handling
-- JSON and Markdown export
+### Version 1.2.0 (Latest)
+
+- **Enhanced Security and Legal Compliance**:
+  - Improved sensitive data detection (API keys, passwords, tokens)
+  - Strict URL validation and hostname checking
+  - Advanced robots.txt compliance system
+  - Protected access to sensitive paths and admin panels
+  - Extended internal network protection
+
+- **Advanced Proxy Management**:
+  - Intelligent proxy rotation based on performance
+  - Proxy health monitoring and scoring
+  - Automatic removal of poor performers
+  - Response time tracking
+  - Proxy anonymity verification
+
+- **Adaptive Rate Limiting**:
+  - Domain-specific rate controls
+  - Automatic backoff on errors
+  - Burst control with configurable limits
+  - Response time monitoring
+  - Per-domain request tracking
+
+- **Enhanced Configuration System**:
+  - Comprehensive security defaults
+  - Privacy-focused settings
+  - Legal compliance options
+  - Random user agent rotation
+  - Input validation and sanitization
+  - Request limits and error thresholds
+
+### Version 1.1.0
+
+- **Google Colab Integration**:
+  - Easy-to-use notebook interface
+  - Cloud-based execution support
+  - Interactive examples and tutorials
+
+- **Advanced Web Scraping Implementation**:
+  - LLM-powered schema generation using OpenAI/Ollama
+  - Automatic CSS and XPath schema generation
+  - Comprehensive documentation and examples
+  - Parallel processing and performance optimizations
+  - Enhanced JSON extraction with JSONPath support
+  - Complex JSONPath, JSON-CSS, and Microdata extraction
+  - SSL certificate handling with custom paths
+  - Enhanced security features
+  - Async/await support for better concurrency
+  - Improved media extraction
+  - Document type detection
+  - Lazy loading support
+  - Responsive image handling
+
+### Version 1.0.0
+
+- **Initial Release**:
+  - Core web scraping functionality
+  - Mistral AI integration
+  - Web interface implementation
+  - GitHub repository handling
+  - JSON and Markdown export
+  - Basic HTML content extraction
+  - Markdown formatting
+  - File output handling
 
 ### Version 0.9.0 (Beta)
-- Beta release with core features
-- Basic web scraping
-- Content processing pipeline
-- Command-line interface
+
+- **Beta Release**:
+  - Core web scraping features
+  - Basic content processing pipeline
+  - Command-line interface
 
 ### Version 0.5.0 (Alpha)
-- Alpha release for testing
-- Basic HTML parsing
-- File output handling
-- Error handling implementation
+
+- **Alpha Release**:
+  - Basic HTML parsing
+  - File output handling
+  - Error handling implementation
 
 ## 🚀 Key Features
 
 ### 🌐 Web Scraping Capabilities
-- **Intelligent Content Extraction**
+
+- **Intelligent Content Extraction**:
   - HTML parsing with BeautifulSoup4
   - Special handling for GitHub repositories
   - Raw markdown file processing
-  - Robots.txt compliance checking
+  - Advanced robots.txt compliance system
+  - Strict URL validation and hostname checking
+  - Protected access controls for sensitive paths
+
+### 🔒 Security and Compliance
+
+- **Data Protection**:
+  - Advanced sensitive data detection and redaction
+  - Automatic detection of API keys, passwords, and tokens
+  - Secure handling of credentials and sensitive information
+
+- **Access Control**:
+  - Extended internal network protection
+  - Strict URL validation and filtering
+  - Protected access to sensitive paths
+
+- **Network Security**:
+  - Intelligent proxy rotation with performance scoring
+  - Automatic removal of poor-performing proxies
+  - Response time monitoring and optimization
+
+- **Legal Compliance**:
+  - Advanced robots.txt compliance system
+  - Rate limiting with domain-specific controls
+  - Privacy-focused configuration defaults
 
 ### 📝 Content Processing
-- **Smart Content Analysis**
+
+- **Smart Content Analysis**:
   - Automatic content structure detection
   - Preservation of header hierarchy
   - List formatting (ordered and unordered)
@@ -102,19 +191,21 @@ zombitx64 is a comprehensive web scraping and content analysis tool that combine
   - Link extraction and formatting
 
 ### 🤖 Content Analysis
-- **Multiple Analysis Options**
-  - API Version (CrewAPIX64):
+
+- **Multiple Analysis Options**:
+  - **API Version (CrewAPIX64)**:
     - Mistral AI-powered summarization
     - Intelligent chunking for large content
     - Adaptive processing based on content size
-  - Standard Version (CrewNormalX64):
+  - **Standard Version (CrewNormalX64)**:
     - Local text summarization using NLTK
     - Sentence importance scoring
     - Position-based content analysis
     - Keyword-based content evaluation
 
 ### 📊 Output Formats
-- **Flexible Export Options**
+
+- **Flexible Export Options**:
   - JSON output with metadata
   - Formatted Markdown output
   - Timestamped file organization
@@ -123,137 +214,120 @@ zombitx64 is a comprehensive web scraping and content analysis tool that combine
 ## 📁 Project Structure
 
 ### Core Components
-1. **CrewColabX64.ipynb**
+
+1. **CrewColabX64.ipynb**:
    - Google Colab integration
    - Interactive notebook interface
    - Cloud-based execution support
    - Tutorial and example workflows
    - Built-in documentation
-   
-2. **CrewNormalX64.py**
+
+2. **CrewNormalX64.py**:
    - Basic web scraping functionality
    - HTML content extraction
    - Markdown formatting
    - File output handling
 
-2. **CrewAPIX64.py**
+3. **CrewAPIX64.py**:
    - Enhanced scraping capabilities
    - Mistral AI integration
    - GitHub-specific parsing
    - Advanced error handling
 
-3. **Crew4lX64.py**
+4. **Crew4lX64.py**:
    - Advanced Markdown generation with BM25 filtering
    - Structured data extraction with multiple strategies
    - Full browser integration with lazy-load handling
    - Comprehensive media extraction (images, videos, audio)
-   - Session management and proxy support
-   - Custom schema-based data extraction
-   - Link analysis and iframe content extraction
-   - Caching and recursive crawling capabilities
+   - Enhanced security and proxy management
+   - Adaptive rate limiting and monitoring
+   - Legal compliance and privacy controls
+   - Advanced data protection features
 
-4. **Web Interface**
+5. **Web Interface**:
    - User-friendly interface for URL input
    - Result display with content preview
    - Download options for JSON/Markdown
    - Error feedback
 
-## 🛠️ Setup and Usage
+## Installation
 
-### Installation Options
+To get started with zombitx64, follow these steps:
 
-#### 1. Install via GitHub Packages
-```bash
-# Configure pip to use GitHub Packages
-pip install --upgrade pip
-pip config set global.index-url https://npm.pkg.github.com
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/yourusername/zombitx64.git
+   cd zombitx64
+   ```
 
-# Install the package
-pip install zombitx64
-```
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-To authenticate with GitHub Packages, you'll need to:
-1. Create a Personal Access Token (PAT) with `read:packages` scope
-2. Configure pip to use your PAT:
-```bash
-pip config set global.username YOUR_GITHUB_USERNAME
-pip config set global.password YOUR_GITHUB_PAT
-```
+3. **Configure the Tool**:
+   - Create a `.env` file in the project root and add your configuration settings, such as API keys.
 
-#### 2. Install from Source
-```bash
-# Clone the repository
-git clone [repository-url]
-cd [repository-name]
-
-# Install required packages
-pip install -r requirements.txt
-```
-
-### Environment Setup
-
-#### For API Version (CrewAPIX64)
-- Create a `.env` file in the project root
-- Add your Mistral AI API key:
-  ```
-  MISTRAL_API_KEY=your_api_key_here
-  ```
-
-#### For Standard Version (CrewNormalX64)
-- No API key required
-- NLTK will be automatically downloaded on first run
-
-### Running the Tool
+## Running the Tool
 
 The tool provides two versions with different capabilities:
 
-#### 1. Standard Version (No API Required)
+### 1. Standard Version (No API Required)
+
 ```bash
 python CrewNormalX64.py
 ```
-Features:
+
+**Features**:
 - Web scraping with BeautifulSoup
 - Local text summarization using NLTK
 - GitHub repository handling
 - JSON and Markdown output
 - No API key required
 
-#### 2. API Version (Requires Mistral API Key)
+### 2. API Version (Requires Mistral API Key)
+
 ```bash
 python CrewAPIX64.py
 ```
-Features:
+
+**Features**:
 - All standard version features
 - Advanced AI-powered summarization
 - Intelligent content chunking
 - Enhanced summary quality
 - Requires Mistral API key
 
-#### Web Interface
+### Web Interface
+
+To start the web interface, run:
 ```bash
-# Start the web server
 python -m zombitx64.app
 ```
 
-### Publishing to GitHub Packages
+## Publishing to GitHub Packages
+
 For contributors who want to publish new versions:
 
-1. Update version in `setup.py`
-2. Build the package:
-```bash
-python -m build
-```
+1. **Update Version**:
+   - Update the version number in `setup.py`.
 
-3. Publish to GitHub Packages:
-```bash
-python -m twine upload --repository github dist/*
-```
+2. **Build the Package**:
+   ```bash
+   python -m build
+   ```
 
-Note: You need appropriate permissions and a PAT with `write:packages` scope to publish.
+3. **Publish to GitHub Packages**:
+   ```bash
+   python -m twine upload --repository github dist/*
+   ```
+
+**Note**: You need appropriate permissions and a PAT with `write:packages` scope to publish.
 
 ![Example](./public/imageReame.png)
 
 ## 📤 Output Directory Structure
+
 ```
 scraped_output/
 ├── scraped_[timestamp].json  # JSON format output
@@ -265,6 +339,7 @@ scraped_output/
 ### Advanced Scraping Capabilities (Crew4lX64.py)
 
 #### 📝 Markdown Generation
+
 - Clean, structured Markdown with accurate formatting
 - BM25-based content filtering for relevance
 - Intelligent citation and reference management
@@ -272,12 +347,14 @@ scraped_output/
 - Customizable content filtering
 
 #### 📊 Structured Data Extraction
+
 - Topic-based chunking strategies
 - Cosine similarity for content relevance
 - Schema-based data extraction using CSS selectors
 - Flexible data extraction patterns
 
 #### 🌐 Browser Integration
+
 - Managed browser with anti-detection features
 - Remote browser control capabilities
 - Session management for complex workflows
@@ -286,6 +363,7 @@ scraped_output/
 - Multi-browser compatibility
 
 #### 🔎 Media and Content Extraction
+
 - Comprehensive media support (images, video, audio)
 - Responsive image format handling
 - Lazy-load content detection
@@ -295,18 +373,21 @@ scraped_output/
 - Caching system for improved performance
 
 ### GitHub Repository Handling
+
 - Repository metadata extraction
 - README.md content parsing
 - Description and structure preservation
 - Support for both main and master branches
 
 ### Content Processing Pipeline
+
 1. URL validation and robots.txt checking
 2. Content extraction and structure analysis
 3. AI-powered summarization (when enabled)
 4. Formatted output generation
 
 ### Error Handling
+
 - Comprehensive error catching
 - Informative error messages
 - Fallback mechanisms for different scenarios
@@ -317,6 +398,7 @@ scraped_output/
 The tool offers two approaches for content analysis:
 
 ### API Version (CrewAPIX64)
+
 - Uses Mistral AI for advanced summarization
 - Automatic content chunking for large texts
 - Progressive summarization for multi-chunk content
@@ -325,6 +407,7 @@ The tool offers two approaches for content analysis:
 - Requires API key configuration
 
 ### Standard Version (CrewNormalX64)
+
 - Uses NLTK for local text summarization
 - Sentence scoring based on position and length
 - Keyword-based importance analysis
@@ -333,23 +416,27 @@ The tool offers two approaches for content analysis:
 - No API key required
 
 ## 🌐 Web Interface Features
+
 - Clean and intuitive user interface
 - Real-time scraping feedback
 - Content preview functionality
 - Direct file download options
 
 ## ⚠️ Important Notes
+
 - Ensure proper API key configuration in `.env`
 - Respect robots.txt guidelines
 - Monitor rate limits for API calls
 - Check output directory permissions
 
 ## 🔄 Future Improvements
+
 - Additional output format support
 - Enhanced error recovery
 - Multiple AI provider support
 
 ## 👥 Contributing
+
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 1. Fork the repository
@@ -360,7 +447,8 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=deepseek-ai/awesome-deepseek-integration,JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#deepseek-ai/awesome-deepseek-integration&JonusNattapong/Crewzombitx64&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#JonusNattapong/Crewzombitx64&Date)
 
 ## 📄 License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
