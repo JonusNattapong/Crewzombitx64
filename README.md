@@ -41,6 +41,11 @@
     - [Publishing to GitHub Packages](#publishing-to-github-packages)
   - [📤 Output Directory Structure](#-output-directory-structure)
   - [🔍 Features in Detail](#-features-in-detail)
+    - [Advanced Scraping Capabilities (Crew4lX64.py)](#advanced-scraping-capabilities-crew4lx64py)
+      - [📝 Markdown Generation](#-markdown-generation)
+      - [📊 Structured Data Extraction](#-structured-data-extraction)
+      - [🌐 Browser Integration](#-browser-integration)
+      - [🔎 Media and Content Extraction](#-media-and-content-extraction)
     - [GitHub Repository Handling](#github-repository-handling)
     - [Content Processing Pipeline](#content-processing-pipeline)
     - [Error Handling](#error-handling)
@@ -129,7 +134,17 @@ zombitx64 is a comprehensive web scraping and content analysis tool that combine
    - GitHub-specific parsing
    - Advanced error handling
 
-3. **Web Interface**
+3. **Crew4lX64.py**
+   - Advanced Markdown generation with BM25 filtering
+   - Structured data extraction with multiple strategies
+   - Full browser integration with lazy-load handling
+   - Comprehensive media extraction (images, videos, audio)
+   - Session management and proxy support
+   - Custom schema-based data extraction
+   - Link analysis and iframe content extraction
+   - Caching and recursive crawling capabilities
+
+4. **Web Interface**
    - User-friendly interface for URL input
    - Result display with content preview
    - Download options for JSON/Markdown
@@ -238,6 +253,38 @@ scraped_output/
 ```
 
 ## 🔍 Features in Detail
+
+### Advanced Scraping Capabilities (Crew4lX64.py)
+
+#### 📝 Markdown Generation
+- Clean, structured Markdown with accurate formatting
+- BM25-based content filtering for relevance
+- Intelligent citation and reference management
+- Multiple generation strategies
+- Customizable content filtering
+
+#### 📊 Structured Data Extraction
+- Topic-based chunking strategies
+- Cosine similarity for content relevance
+- Schema-based data extraction using CSS selectors
+- Flexible data extraction patterns
+
+#### 🌐 Browser Integration
+- Managed browser with anti-detection features
+- Remote browser control capabilities
+- Session management for complex workflows
+- Proxy support with authentication
+- Dynamic viewport adjustment
+- Multi-browser compatibility
+
+#### 🔎 Media and Content Extraction
+- Comprehensive media support (images, video, audio)
+- Responsive image format handling
+- Lazy-load content detection
+- Full-page content scanning
+- Metadata extraction
+- IFrame content processing
+- Caching system for improved performance
 
 ### GitHub Repository Handling
 - Repository metadata extraction
