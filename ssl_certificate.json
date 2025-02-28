@@ -1,0 +1,48 @@
+{
+    "certificate": {
+        "version": 1.0,
+        "issuer": "ZombitX64 Security",
+        "validity": {
+            "notBefore": "2025-02-28T00:00:00Z",
+            "notAfter": "2026-02-28T23:59:59Z"
+        },
+        "subject": {
+            "commonName": "*.ZombitX64.com",
+            "organization": "ZombitX64",
+            "country": "TH",
+            "state": "Bangkok",
+            "locality": "Bangkok"
+        },
+        "key": {
+            "algorithm": "RSA",
+            "size": 2048,
+            "usage": ["digitalSignature", "keyEncipherment"]
+        },
+        "extensions": {
+            "subjectAltName": ["DNS:*.ZombitX64.com", "DNS:ZombitX64.com"],
+            "keyUsage": ["digitalSignature", "keyEncipherment"],
+            "extendedKeyUsage": ["serverAuth", "clientAuth"]
+        },
+        "fingerprint": {
+            "sha1": "XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX",
+            "sha256": "XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX"
+        }
+    },
+    "configuration": {
+        "verifyPeer": true,
+        "verifyHost": true,
+        "allowSelfSigned": false,
+        "minimumTLSVersion": "TLSv1.2",
+        "preferredCiphers": [
+            "ECDHE-ECDSA-AES256-GCM-SHA384",
+            "ECDHE-RSA-AES256-GCM-SHA384",
+            "ECDHE-ECDSA-CHACHA20-POLY1305",
+            "ECDHE-RSA-CHACHA20-POLY1305"
+        ]
+    },
+    "renewal": {
+        "autoRenew": true,
+        "daysBeforeExpiry": 30,
+        "notificationEmail": "security@ZombitX64.com"
+    }
+}
