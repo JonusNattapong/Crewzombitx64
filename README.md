@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Project Logo](Zom.png)
+![Project Logo](./public/Zom.png)
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -196,6 +196,8 @@ python -m twine upload --repository github dist/*
 ```
 
 Note: You need appropriate permissions and a PAT with `write:packages` scope to publish.
+
+![Example](./public/imageReame.png)
 
 ## 📤 Output Directory Structure
 ```
