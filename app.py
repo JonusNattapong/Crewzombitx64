@@ -118,12 +118,12 @@ def save_content_markdown(content, output_file):
         f.write(content['text'])
 
 def main():
-    url = "https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/"
+    url = "https://github.com/amrzv/awesome-colab-notebooks/blob/main/data/tutorials.json"
     content = scrape_content(url)
 
     if content:
-        save_content_json(content, "crawled_content.json")
-        save_content_markdown(content, "crawled_content.md")
+        save_content_json(content, "crawled_content1.json")
+        save_content_markdown(content, "crawled_content1.md")
         print("Content has been successfully crawled and saved to crawled_content.json and crawled_content.md")
     else:
         print("No content was crawled")
