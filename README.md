@@ -23,7 +23,7 @@
   - [🚀 Key Features](#-key-features)
     - [🌐 Web Scraping Capabilities](#-web-scraping-capabilities)
     - [📝 Content Processing](#-content-processing)
-    - [🤖 AI Integration](#-ai-integration)
+    - [🤖 Content Analysis](#-content-analysis)
     - [📊 Output Formats](#-output-formats)
   - [📁 Project Structure](#-project-structure)
     - [Core Components](#core-components)
@@ -32,8 +32,11 @@
       - [1. Install via GitHub Packages](#1-install-via-github-packages)
       - [2. Install from Source](#2-install-from-source)
     - [Environment Setup](#environment-setup)
+      - [For API Version (CrewAPIX64)](#for-api-version-crewapix64)
+      - [For Standard Version (CrewNormalX64)](#for-standard-version-crewnormalx64)
     - [Running the Tool](#running-the-tool)
-      - [Command Line Interface](#command-line-interface)
+      - [1. Standard Version (No API Required)](#1-standard-version-no-api-required)
+      - [2. API Version (Requires Mistral API Key)](#2-api-version-requires-mistral-api-key)
       - [Web Interface](#web-interface)
     - [Publishing to GitHub Packages](#publishing-to-github-packages)
   - [📤 Output Directory Structure](#-output-directory-structure)
@@ -41,7 +44,9 @@
     - [GitHub Repository Handling](#github-repository-handling)
     - [Content Processing Pipeline](#content-processing-pipeline)
     - [Error Handling](#error-handling)
-  - [🤖 AI Integration](#-ai-integration-1)
+  - [🤖 Content Analysis](#-content-analysis-1)
+    - [API Version (CrewAPIX64)](#api-version-crewapix64)
+    - [Standard Version (CrewNormalX64)](#standard-version-crewnormalx64)
   - [🌐 Web Interface Features](#-web-interface-features)
   - [⚠️ Important Notes](#️-important-notes)
   - [🔄 Future Improvements](#-future-improvements)
@@ -90,12 +95,17 @@ zombitx64 is a comprehensive web scraping and content analysis tool that combine
   - Code block preservation
   - Link extraction and formatting
 
-### 🤖 AI Integration
-- **Mistral AI Integration**
-  - Content summarization
-  - Intelligent chunking for large content
-  - Adaptive processing based on content size
-  - Error handling with informative messages
+### 🤖 Content Analysis
+- **Multiple Analysis Options**
+  - API Version (CrewAPIX64):
+    - Mistral AI-powered summarization
+    - Intelligent chunking for large content
+    - Adaptive processing based on content size
+  - Standard Version (CrewNormalX64):
+    - Local text summarization using NLTK
+    - Sentence importance scoring
+    - Position-based content analysis
+    - Keyword-based content evaluation
 
 ### 📊 Output Formats
 - **Flexible Export Options**
@@ -158,22 +168,43 @@ pip install -r requirements.txt
 ```
 
 ### Environment Setup
+
+#### For API Version (CrewAPIX64)
 - Create a `.env` file in the project root
 - Add your Mistral AI API key:
   ```
   MISTRAL_API_KEY=your_api_key_here
   ```
 
+#### For Standard Version (CrewNormalX64)
+- No API key required
+- NLTK will be automatically downloaded on first run
+
 ### Running the Tool
 
-#### Command Line Interface
-```bash
-# Basic scraping
-python -m zombitx64.normal
+The tool provides two versions with different capabilities:
 
-# Advanced scraping with AI
-python -m zombitx64.api
+#### 1. Standard Version (No API Required)
+```bash
+python CrewNormalX64.py
 ```
+Features:
+- Web scraping with BeautifulSoup
+- Local text summarization using NLTK
+- GitHub repository handling
+- JSON and Markdown output
+- No API key required
+
+#### 2. API Version (Requires Mistral API Key)
+```bash
+python CrewAPIX64.py
+```
+Features:
+- All standard version features
+- Advanced AI-powered summarization
+- Intelligent content chunking
+- Enhanced summary quality
+- Requires Mistral API key
 
 #### Web Interface
 ```bash
@@ -226,13 +257,25 @@ scraped_output/
 - Fallback mechanisms for different scenarios
 - API rate limit handling
 
-## 🤖 AI Integration
+## 🤖 Content Analysis
 
-The tool uses Mistral AI for content summarization with the following features:
+The tool offers two approaches for content analysis:
+
+### API Version (CrewAPIX64)
+- Uses Mistral AI for advanced summarization
 - Automatic content chunking for large texts
 - Progressive summarization for multi-chunk content
 - Detailed progress tracking
 - Error recovery mechanisms
+- Requires API key configuration
+
+### Standard Version (CrewNormalX64)
+- Uses NLTK for local text summarization
+- Sentence scoring based on position and length
+- Keyword-based importance analysis
+- No external API dependencies
+- Works offline
+- No API key required
 
 ## 🌐 Web Interface Features
 - Clean and intuitive user interface
