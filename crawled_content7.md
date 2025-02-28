@@ -2,38 +2,25 @@
 
 URL: https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/#ib-toc-anchor-0
 
-Crawled at: 2025-02-28T11:03:06.117748
+Crawled at: 2025-02-28T11:21:42.850369
 
 ## Summary
 
-The blog is structured into three main segments:
+The blog is divided into three main segments:
 
-1. **LLM Fundamentals (optional)**: Covers essential topics such as mathematics, Python, and neural networks.
-   - **Mathematics for Machine Learning**: Includes linear algebra, calculus, and probability/statistics.
-   - **Python for Machine Learning**: Covers Python basics, data science libraries, data preprocessing, and machine learning libraries.
-   - **Neural Networks**: Fundamentals, training/optimization, overfitting, and implementing multilayer perceptrons.
-   - **Natural Language Processing (NLP)**: Text preprocessing, feature extraction, word embeddings, and recurrent neural networks.
+1. **LLM Fundamentals (optional)**:
+   - Covers essential topics like mathematics, Python, and neural networks.
+   - Key areas include linear algebra, calculus, probability and statistics, Python basics, data science libraries, data preprocessing, machine learning libraries, and neural network fundamentals.
 
-2. **The LLM Scientist**: Focuses on building high-performing LLMs using state-of-the-art techniques.
-   - **LLM Architecture**: Tokenization, attention mechanisms, and sampling techniques.
-   - **Pre-training Models**: Data preparation, distributed training, and training optimization.
-   - **Post-training Datasets**: Storage, synthetic data generation, data enhancement, and quality filtering.
-   - **Supervised Fine-Tuning**: Training techniques, parameters, and distributed training.
-   - **Preference Alignment**: Rejection sampling, direct preference optimization, and proximal policy optimization.
-   - **Evaluation**: Automated benchmarks, human evaluation, model-based evaluation, and feedback signals.
-   - **Quantization**: Base techniques, GGUF & llama.cpp, GPTQ & AWQ, SmoothQuant & ZeroQuant.
-   - **New Trends**: Model merging, multimodal models, interpretability, and test-time compute scaling.
+2. **The LLM Scientist**:
+   - Focuses on creating high-performing LLMs using state-of-the-art techniques.
+   - Key areas include LLM architecture, pre-training models, post-training datasets, supervised fine-tuning, preference alignment, evaluation, quantization, and new trends.
 
-3. **The LLM Engineer**: Teaches how to build production-grade applications powered by LLMs.
-   - **Running LLMs**: LLM APIs, open-source LLMs, prompt engineering, and structuring outputs.
-   - **Building a Vector Storage**: Ingesting documents, splitting documents, embedding models, and vector databases.
-   - **Retrieval Augmented Generation (RAG)**: Orchestrators, retrievers, memory, and evaluation.
-   - **Advanced RAG**: Query construction, agents and tools, post-processing, and program LLMs.
-   - **Inference Optimization**: Flash attention, key-value cache, and speculative decoding.
-   - **Deploying LLMs**: Local deployment, demo deployment, server deployment, and edge deployment.
-   - **Securing LLMs**: Prompt hacking, backdoors, and defensive measures.
+3. **The LLM Engineer**:
+   - Emphasizes building and deploying applications based on LLMs.
+   - Key areas include running LLMs, building vector storage, retrieval augmented generation, advanced RAG, inference optimization, deploying LLMs, and securing LLMs.
 
-Each section includes references to relevant resources and tools for further learning and implementation.
+Additional sections include notebooks, tools, fine-tuning, quantization, and other related topics.
 
 
 
