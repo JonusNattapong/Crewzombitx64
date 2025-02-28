@@ -10,6 +10,7 @@ from lxml import html
 from jsonpath_ng import parse as jsonpath_parse
 from schema_generator import SchemaGenerator
 
+logger = logging.getLogger(__name__)
 
 class ContentExtractor:
     def __init__(self):
@@ -21,8 +22,8 @@ class ContentExtractor:
         self.vectorizer = TfidfVectorizer()
         self.schema_generator = SchemaGenerator()
 
-    def extract_main_content(self, html):
-        soup = BeautifulSoup(html, 'html.parser')
+    def extract_main_content(self, html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
 
         for element in soup.find_all(['script', 'style', 'noscript']):
             element.decompose()
@@ -105,58 +106,75 @@ class ContentExtractor:
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
 
-    async def extract_all(self, html: str, data_type: str = None) -> Dict:
-        schema = await self.schema_generator.generate_schema(html, data_type) if data_type else {}
+    async def extract_all(self, html_content: str, data_type: str = None) -> Dict:
+        schema = await self.schema_generator.generate_schema(html_content, data_type) if data_type else {}
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
-                executor.submit(self._extract_structured_data, html, schema),
-                executor.submit(self._extract_json_ld, html),
-                executor.submit(self._extract_microdata, html)
+                executor.submit(self._extract_structured_data, html_content, schema),
+                executor.submit(self._extract_json_ld, html_content),
+                executor.submit(self._extract_microdata, html_content)
             ]
 
             results = {}
             for future in concurrent.futures.as_completed(futures):
-                results.update(future.result())
+                try:
+                    results.update(future.result())
+                except Exception as e:
+                    logging.error(f"Error in extraction task: {str(e)}")
+                    continue
 
         return results
 
-    def _extract_structured_data(self, html: str, schema: Dict) -> Dict:
+    def _extract_structured_data(self, html_content: str, schema: Dict) -> Dict:
         result = {}
-        soup = BeautifulSoup(html, 'html.parser')
-        tree = html.fromstring(html.encode())
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        try:
+            tree = html.fromstring(html_content.encode('utf-8'))
+        except Exception as e:
+            logging.error(f"Failed to parse HTML with lxml: {str(e)}")
+            tree = None
 
         if 'selectors' in schema:
             for key, selector in schema['selectors'].items():
-                elements = soup.select(selector)
-                result[key] = [e.get_text(strip=True) for e in elements]
-                if len(result[key]) == 1:
-                    result[key] = result[key][0]
+                try:
+                    elements = soup.select(selector)
+                    result[key] = [e.get_text(strip=True) for e in elements]
+                    if len(result[key]) == 1:
+                        result[key] = result[key][0]
+                except Exception as e:
+                    logging.error(f"Error extracting selector {selector}: {str(e)}")
 
-        if 'xpath' in schema:
+        if tree is not None and 'xpath' in schema:
             for key, xpath in schema['xpath'].items():
-                elements = tree.xpath(xpath)
-                result[key] = [e.text_content().strip() for e in elements if e.text_content()]
-                if len(result[key]) == 1:
-                    result[key] = result[key][0]
+                try:
+                    elements = tree.xpath(xpath)
+                    result[key] = [e.text_content().strip() for e in elements if e.text_content()]
+                    if len(result[key]) == 1:
+                        result[key] = result[key][0]
+                except Exception as e:
+                    logging.error(f"Error extracting xpath {xpath}: {str(e)}")
 
         return {'structured': result}
 
-    def _extract_json_ld(self, html: str) -> Dict:
-        soup = BeautifulSoup(html, 'html.parser')
+    def _extract_json_ld(self, html_content: str) -> Dict:
+        soup = BeautifulSoup(html_content, 'html.parser')
         json_ld_data = []
 
         for script in soup.find_all('script', type='application/ld+json'):
             try:
-                data = json.loads(script.string)
-                json_ld_data.append(data)
-            except json.JSONDecodeError:
+                if script.string:
+                    data = json.loads(script.string)
+                    json_ld_data.append(data)
+            except (json.JSONDecodeError, TypeError) as e:
+                logging.error(f"Error parsing JSON-LD: {str(e)}")
                 continue
 
         return {'json_ld': json_ld_data}
 
-    def _extract_microdata(self, html: str) -> Dict:
-        soup = BeautifulSoup(html, 'html.parser')
+    def _extract_microdata(self, html_content: str) -> Dict:
+        soup = BeautifulSoup(html_content, 'html.parser')
         microdata = {}
 
         for element in soup.find_all(attrs={"itemscope": True}):
@@ -166,25 +184,29 @@ class ContentExtractor:
 
             properties = {}
             for prop in element.find_all(attrs={"itemprop": True}):
-                prop_name = prop["itemprop"]
+                try:
+                    prop_name = prop["itemprop"]
 
-                if prop.name in ['meta', 'link']:
-                    prop_value = prop.get('content') or prop.get('href')
-                elif prop.name in ['img', 'audio', 'video']:
-                    prop_value = prop.get('src')
-                elif prop.name == 'time':
-                    prop_value = prop.get('datetime')
-                else:
-                    prop_value = prop.get_text(strip=True)
-
-                if prop_value:
-                    if prop_name in properties:
-                        if isinstance(properties[prop_name], list):
-                            properties[prop_name].append(prop_value)
-                        else:
-                            properties[prop_name] = [properties[prop_name], prop_value]
+                    if prop.name in ['meta', 'link']:
+                        prop_value = prop.get('content') or prop.get('href')
+                    elif prop.name in ['img', 'audio', 'video']:
+                        prop_value = prop.get('src')
+                    elif prop.name == 'time':
+                        prop_value = prop.get('datetime')
                     else:
-                        properties[prop_name] = prop_value
+                        prop_value = prop.get_text(strip=True)
+
+                    if prop_value:
+                        if prop_name in properties:
+                            if isinstance(properties[prop_name], list):
+                                properties[prop_name].append(prop_value)
+                            else:
+                                properties[prop_name] = [properties[prop_name], prop_value]
+                        else:
+                            properties[prop_name] = prop_value
+                except Exception as e:
+                    logging.error(f"Error extracting microdata property: {str(e)}")
+                    continue
 
             if properties:
                 if item_type in microdata:

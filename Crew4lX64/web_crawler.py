@@ -18,6 +18,9 @@ class WebCrawler:
         self.visited_urls = set()
         self.cache = {}
         self.session = None
+        self.rate_limiter = RateLimiter()
+        self.proxy_manager = None
+        self.respect_robots = True
         self._setup_logging()
 
     def _setup_logging(self):
@@ -27,9 +30,16 @@ class WebCrawler:
             datefmt='%Y-%m-%d %H:%M:%S'
         )
 
-    async def setup(self, use_browser=False, **kwargs):
+    async def setup(self, use_browser=False, respect_robots=True, rate_limit=1.0, use_proxies=False, **kwargs):
+        self.respect_robots = respect_robots
+        self.rate_limiter = RateLimiter(requests_per_second=rate_limit)
+        
+        if use_proxies:
+            self.proxy_manager = ProxyManager()
+            
         if use_browser:
             self.browser = BrowserManager(**kwargs)
+            
         if not self.session:
             self.session = aiohttp.ClientSession()
 
@@ -46,6 +56,13 @@ class WebCrawler:
         if url in self.cache:
             return self.cache[url]
 
+        # Check robots.txt if enabled
+        if self.respect_robots:
+            allowed = await self.check_robots_txt(url)
+            if not allowed:
+                logging.warning(f"URL {url} is not allowed by robots.txt")
+                return None
+
         self.visited_urls.add(url)
         result = {
             'url': url,
@@ -60,20 +77,27 @@ class WebCrawler:
             if not html_content:
                 return None
 
-            async with asyncio.TaskGroup() as group:
-                structured_task = group.create_task(
-                    self.data_extractor.extract_all(html_content)
-                )
-                media_task = group.create_task(
-                    self._extract_media(html_content, url)
-                )
-                links_task = group.create_task(
-                    self._extract_links(html_content, url)
-                )
+            try:
+                async with asyncio.TaskGroup() as group:
+                    structured_task = group.create_task(
+                        self.data_extractor.extract_all(html_content)
+                    )
+                    media_task = group.create_task(
+                        self._extract_media(html_content, url)
+                    )
+                    links_task = group.create_task(
+                        self._extract_links(html_content, url)
+                    )
 
-            result['content'] = structured_task.result()
-            result['media'] = media_task.result()
-            result['links'] = links_task.result()
+                result['content'] = structured_task.result()
+                result['media'] = media_task.result()
+                result['links'] = links_task.result()
+            except ExceptionGroup as e:
+                logging.error(f"Task group error while processing {url}: {str(e)}")
+                # Continue with any successful results
+                result['content'] = getattr(structured_task, 'result', lambda: {})()
+                result['media'] = getattr(media_task, 'result', lambda: {})()
+                result['links'] = getattr(links_task, 'result', lambda: [])()
 
             self.cache[url] = result
 
@@ -113,9 +137,28 @@ class WebCrawler:
         return self.browser.driver.page_source
 
     async def _fetch_with_requests(self, url: str) -> str:
-        async with self.session.get(url) as response:
-            response.raise_for_status()
-            return await response.text()
+        # Apply rate limiting
+        await self.rate_limiter.wait(url)
+        
+        # Get proxy if available
+        proxy = None
+        if self.proxy_manager:
+            proxy = await self.proxy_manager.get_next_proxy()
+
+        try:
+            async with self.session.get(url, proxy=proxy, timeout=30) as response:
+                response.raise_for_status()
+                content = await response.text()
+                
+                # Mark proxy as successful if used
+                if proxy:
+                    await self.proxy_manager.mark_proxy_success(proxy, response.elapsed)
+                    
+                return content
+        except Exception as e:
+            if proxy:
+                await self.proxy_manager.mark_proxy_failed(proxy)
+            raise e
 
     async def _handle_lazy_loading(self, max_scrolls: int = 10):
         if not self.browser or not self.browser.driver:
