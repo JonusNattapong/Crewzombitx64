@@ -9,7 +9,19 @@ from dotenv import load_dotenv
 # โหลดค่า API Key จากไฟล์ .env
 load_dotenv()
 api_key = os.getenv("MISTRAL_API_KEY")
-client = Mistral(api_key=api_key)
+
+if not api_key:
+    print("❌ MISTRAL_API_KEY not found in .env file")
+    print("📝 Please add your Mistral API key to .env file:")
+    print("MISTRAL_API_KEY=your_api_key_here")
+    exit(1)
+
+try:
+    client = Mistral(api_key=api_key)
+except Exception as e:
+    print(f"❌ Error initializing Mistral client: {str(e)}")
+    print("⚠️ Please check if your API key is valid")
+    exit(1)
 
 # ฟังก์ชันการเช็ค robots.txt
 def check_robots_txt(url):
@@ -23,20 +35,20 @@ def check_robots_txt(url):
 
 # ฟังก์ชันขูดข้อมูลจากเว็บไซต์
 def scrape_content(url):
-    print(f"\n[*] Starting to scrape: {url}")
+    print(f"\n🔍 Starting to scrape: {url}")
     
     if not check_robots_txt(url):
-        print("[-] Crawling disallowed by robots.txt")
+        print("❌ Crawling disallowed by robots.txt")
         return None
 
     try:
-        print("[*] Fetching page content...")
+        print("📡 Fetching page content...")
         response = requests.get(url)
         response.raise_for_status()
 
         # Check if it's a raw markdown file
         if url.endswith('.md'):
-            print("[*] Processing raw markdown content...")
+            print("📝 Processing raw markdown content...")
             content = []
             
             # Split the content into lines and process
@@ -68,14 +80,14 @@ def scrape_content(url):
 
         # Handle GitHub repository pages
         if 'github.com' in url and '/raw/' not in url:
-            print("[*] Detected GitHub repository, parsing specific elements...")
+            print("🔍 Detected GitHub repository, parsing specific elements...")
             
             # Get repository title
             title_elem = soup.find('strong', {'itemprop': 'name'})
             if not title_elem:
                 title_elem = soup.find('h1', class_='d-flex')
             title = title_elem.text.strip() if title_elem else "No Title Found"
-            print(f"[+] Found repository title: {title}")
+            print(f"📚 Found repository title: {title}")
 
             # Get repository content
             content = []
@@ -85,13 +97,13 @@ def scrape_content(url):
             if description:
                 desc_text = description.text.strip()
                 content.append(desc_text)
-                print(f"[+] Found repository description: {desc_text}")
+                print(f"📋 Found repository description: {desc_text}")
 
             # Get README content from the article directly
             readme = soup.find('article', class_='markdown-body')
             
             if readme:
-                print("[*] Extracting README content...")
+                print("📖 Extracting README content...")
                 
                 # Remove unwanted elements
                 for unwanted in readme.find_all(['nav', 'footer', 'script', 'style']):
@@ -212,50 +224,69 @@ def split_content(content, max_chars=20000):
     return chunks
 
 def summarize_with_mistral(content):
-    print("\n[*] Starting content summarization with Mistral AI...")
+    print("\n🤖 Starting content summarization with Mistral AI...")
     try:
-        print(f"[*] Total content length: {len(content)} characters")
+        print(f"📊 Total content length: {len(content)} characters")
         
         # Split content into chunks if it's too large
         if len(content) > 20000:
-            print("[*] Content too large, splitting into chunks...")
+            print("📎 Content too large, splitting into chunks...")
             chunks = split_content(content)
-            print(f"[*] Split content into {len(chunks)} chunks")
+            print(f"🔄 Split content into {len(chunks)} chunks")
             
-            # Summarize each chunk
+            # Summarize each chunk with progress tracking
             summaries = []
             for i, chunk in enumerate(chunks, 1):
-                print(f"\n[*] Processing chunk {i}/{len(chunks)} ({len(chunk)} characters)")
-                response = client.chat.complete(
-                    model="mistral-large-latest",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": f"Please summarize the following content concisely:\n\n{chunk}"
-                        }
-                    ]
-                )
-                chunk_summary = response.choices[0].message.content
-                summaries.append(chunk_summary)
+                print(f"\n🔄 Processing chunk {i}/{len(chunks)} ({len(chunk)} characters)")
+                try:
+                    print(f"⏳ Generating summary for chunk {i}...")
+                    response = client.chat.complete(
+                        model="mistral-large-latest",
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": f"Please summarize the following content concisely:\n\n{chunk}"
+                            }
+                        ]
+                    )
+                    chunk_summary = response.choices[0].message.content
+                    summaries.append(chunk_summary)
+                    print(f"✅ Successfully summarized chunk {i}")
+                except Exception as e:
+                    print(f"❌ Error summarizing chunk {i}: {str(e)}")
+                    summaries.append(f"[Summary failed for chunk {i}]")
             
             # If we have multiple summaries, combine them
             if len(summaries) > 1:
-                print("\n[*] Combining chunk summaries...")
-                final_summary_prompt = "Please provide a concise overall summary of these summaries:\n\n"
-                final_summary_prompt += "\n\n".join([f"Summary {i+1}:\n{s}" for i, s in enumerate(summaries)])
-                
-                response = client.chat.complete(
-                    model="mistral-large-latest",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": final_summary_prompt
-                        }
-                    ]
-                )
-                summary = response.choices[0].message.content
+                print("\n🔄 Combining chunk summaries...")
+                try:
+                    # Check if any chunks failed
+                    failed_chunks = [i+1 for i, s in enumerate(summaries) if "[Summary failed for chunk" in s]
+                    if failed_chunks:
+                        print(f"⚠️ Note: Chunks {', '.join(map(str, failed_chunks))} failed to summarize")
+                    
+                    final_summary_prompt = "Please provide a concise overall summary of these summaries:\n\n"
+                    final_summary_prompt += "\n\n".join([f"Summary {i+1}:\n{s}" for i, s in enumerate(summaries)])
+                    
+                    print("⏳ Generating final summary...")
+                    response = client.chat.complete(
+                        model="mistral-large-latest",
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": final_summary_prompt
+                            }
+                        ]
+                    )
+                    summary = response.choices[0].message.content
+                    print("✨ Final summary generated successfully!")
+                except Exception as e:
+                    print(f"❌ Error generating final summary: {str(e)}")
+                    summary = "⚠️ Failed to generate final summary. Individual chunk summaries:\n\n" + "\n\n".join(summaries)
             else:
                 summary = summaries[0]
+                if "[Summary failed for chunk" in summary:
+                    summary = "⚠️ " + summary
         else:
             # For smaller content, summarize directly
             response = client.chat.complete(
@@ -273,33 +304,61 @@ def summarize_with_mistral(content):
         print(f"[*] Final summary length: {len(summary)} characters")
         return summary
     except Exception as e:
-        print(f"[-] Error with Mistral summarization: {str(e)}")
-        return "AI Summarization failed."
+        error_message = str(e)
+        print(f"❌ Error with Mistral summarization: {error_message}")
+        
+        if "api_key" in error_message.lower():
+            return "⚠️ AI Summarization failed: Missing or invalid API key. Please check your MISTRAL_API_KEY in .env file."
+        elif "timeout" in error_message.lower():
+            return "⚠️ AI Summarization failed: Request timed out. Please try again."
+        elif "too many requests" in error_message.lower():
+            return "⚠️ AI Summarization failed: Rate limit exceeded. Please wait a moment and try again."
+        else:
+            return f"⚠️ AI Summarization failed: {error_message}"
 
 # ฟังก์ชันในการบันทึกข้อมูลในรูปแบบ JSON
 def save_content_json(content, output_file):
-    print(f"\n[*] Saving content to JSON file: {output_file}")
+    print(f"\n💾 Saving content to JSON file: {output_file}")
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(content, f, indent=2, ensure_ascii=False)
-    print(f"[+] Successfully saved JSON file")
+    print(f"✅ Successfully saved JSON file")
 
 # ฟังก์ชันในการบันทึกข้อมูลในรูปแบบ Markdown
 def save_content_markdown(content, output_file):
-    print(f"\n[*] Saving content to Markdown file: {output_file}")
+    print(f"\n📝 Saving content to Markdown file: {output_file}")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(f"# {content['title']}\n\n")
         f.write(f"URL: {content['metadata']['url']}\n\n")
         f.write(f"Crawled at: {content['metadata']['crawled_at']}\n\n")
         f.write(f"## Summary\n\n{content['summary']}\n\n")
         f.write(content['text'])
-    print(f"[+] Successfully saved Markdown file")
+    print(f"✅ Successfully saved Markdown file")
+
+def print_ascii_art():
+    ascii_art = """
+███████╗ ██████╗ ███╗   ███╗██████╗ ██╗████████╗██╗  ██╗ ██████╗ ██╗  ██╗
+╚══███╔╝██╔═══██╗████╗ ████║██╔══██╗██║╚══██╔══╝╚██╗██╔╝██╔════╝ ██║  ██║
+  ███╔╝ ██║   ██║██╔████╔██║██████╔╝██║   ██║    ╚███╔╝ ███████╗ ███████║
+ ███╔╝  ██║   ██║██║╚██╔╝██║██╔══██╗██║   ██║    ██╔██╗ ██╔═══██╗╚════██║
+███████╗╚██████╔╝██║ ╚═╝ ██║██████╔╝██║   ██║   ██╔╝ ██╗╚██████╔╝     ██║
+╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝      ╚═╝
+    """
+    print(ascii_art)
 
 # ฟังก์ชันหลัก
 def main():
-    print("\n=== Web Scraping and Summarization Tool ===")
-    repo_url = "https://github.com/amrzv/awesome-colab-notebooks"
+    print_ascii_art()
+    print("\n🚀 === Web Scraping and Summarization Tool === 🚀")
+    
+    # Prompt for repository URL
+    print("\n📌 Enter GitHub repository URL (or press Enter for default):")
+    user_input = input("➡️ ").strip()
+    
+    # Use default if no input provided
+    repo_url = user_input if user_input else "https://example.com"
+    
     raw_url = f"{repo_url}/raw/master/README.md"
-    print(f"\n[*] Repository URL: {repo_url}")
+    print(f"\n🔗 Repository URL: {repo_url}")
     print(f"[*] Fetching README from: {raw_url}")
     
     # First try the raw README URL
@@ -333,11 +392,11 @@ def main():
         save_content_json(content, json_file)
         save_content_markdown(content, md_file)
         
-        print("\n[+] Operation completed successfully:")
-        print(f"    - JSON output: {json_file}")
-        print(f"    - Markdown output: {md_file}")
+        print("\n🎉 Operation completed successfully:")
+        print(f"    📄 JSON output: {json_file}")
+        print(f"    📝 Markdown output: {md_file}")
     else:
-        print("\n[-] Failed to crawl content")
+        print("\n❌ Failed to crawl content")
 
 if __name__ == "__main__":
     main()
