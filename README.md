@@ -41,6 +41,7 @@
 - [⚠️ Important Notes](#️-important-notes)
 - [🔄 Future Improvements](#-future-improvements)
 - [👥 Contributing](#-contributing)
+- [Inspiration](#inspiration)
 - [Star History](#star-history)
 - [📄 License](#-license)
 
@@ -376,9 +377,13 @@ scraped_output/
 3. Commit changes
 4. Submit pull request
 
+## Inspiration
+
+This project was inspired by the [unclecode/crawl4ai](https://github.com/unclecode/crawl4ai) repository. It provided valuable insights and ideas that helped shape the development of `Crewzombitx64`.
+
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Timeline)](https://star-history.com/#JonusNattapong/Crewzombitx64&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#JonusNattapong/Crewzombitx64&Date)
 
 ## 📄 License
 
