@@ -378,7 +378,7 @@ scraped_output/
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#JonusNattapong/Crewzombitx64&Date)
+<iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://star-history.com/embed?secret=Z2hwX1FFdkhaaUlXQzBrd0FVQ2pXaGxVVUVIQ2p5M2laZTJ5eldDVg==#JonusNattapong/Crewzombitx64&Timeline" frameBorder="0"></iframe>
 
 ## 📄 License
 
