@@ -378,7 +378,7 @@ scraped_output/
 
 ## Star History
 
-[![Star History Chart](https://star-history.com/#JonusNattapong/Crewzombitx64&Timeline)](https://star-history.com/#JonusNattapong/Crewzombitx64&Timeline)
+[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Timeline)](https://star-history.com/#JonusNattapong/Crewzombitx64&Timeline)
 
 ## 📄 License
 
