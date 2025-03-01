@@ -13,29 +13,7 @@
 
 ## 📋 Table of Contents
 
-[Previous Table of Contents sections remain exactly the same...]
-
-## Star History
-
-⭐ **Current Stars**: 3
-
-<iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://star-history.com/embed?secret=Z2hwXzQydlA2MW05WFl6dldaYkpINUswcWRFd1FCcEptQTNBVUx2Mw==#JonusNattapong/Crewzombitx64&Date" frameBorder="0"></iframe>
-
-<a href="https://star-history.com/#JonusNattapong/Crewzombitx64&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date" />
- </picture>
-</a>
-
-If you find this project useful, please consider giving it a star to show your support! 🌟
-
-## 📄 License
-
 - [📋 Table of Contents](#-table-of-contents)
-- [Star History](#star-history)
-- [📄 License](#-license)
 - [Overview](#overview)
 - [📦 Releases](#-releases)
   - [Version 1.2.0 (Latest)](#version-120-latest)
@@ -65,7 +43,7 @@ If you find this project useful, please consider giving it a star to show your s
 - [🔄 Future Improvements](#-future-improvements)
 - [👥 Contributing](#-contributing)
 - [Inspiration](#inspiration)
-- [📄 License](#-license-1)
+- [📄 License](#-license)
 
 ## Overview
 
