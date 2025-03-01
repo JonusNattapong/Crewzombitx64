@@ -44,6 +44,7 @@
 - [👥 Contributing](#-contributing)
 - [Inspiration](#inspiration)
 - [📄 License](#-license)
+- [Star History](#star-history)
 
 
 ![image2](./public/lot.png)
@@ -388,3 +389,7 @@ This project was inspired by the [unclecode/crawl4ai](https://github.com/uncleco
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) file
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#JonusNattapong/Crewzombitx64&Date)
