@@ -5,6 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub Package](https://img.shields.io/badge/GitHub-Package-green.svg)](https://github.com/features/packages)
+[![GitHub Stars](https://img.shields.io/github/stars/JonusNattapong/Crewzombitx64.svg?style=social)](https://github.com/JonusNattapong/Crewzombitx64/stargazers)
 
 *A powerful web scraping and content analysis tool with AI integration*
 
@@ -383,7 +384,15 @@ This project was inspired by the [unclecode/crawl4ai](https://github.com/uncleco
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date)](https://star-history.com/#JonusNattapong/Crewzombitx64&Date)
+⭐ **Current Stars**: 3
+
+<a href="https://star-history.com/#JonusNattapong/Crewzombitx64&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=JonusNattapong/Crewzombitx64&type=Date&theme=dark" />
+ </picture>
+</a>
+
+If you find this project useful, please consider giving it a star to show your support! 🌟
 
 ## 📄 License
 
