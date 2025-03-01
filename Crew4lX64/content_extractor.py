@@ -19,11 +19,29 @@ class ContentExtractor:
             '.navigation', '.menu', '.ad', '.advertisement',
             '.cookie-banner', '.popup', '#cookie-consent'
         ]
+        self.github_selectors = {
+            'repo_name': '.author.flex-self-stretch a, strong[itemprop="name"] a',
+            'repo_desc': '.f4.my-3',
+            'repo_about': '#repo-content-pjax-container .Layout-sidebar .BorderGrid-row:first-child .BorderGrid-cell',
+            'readme': '#readme article.markdown-body',
+            'file_tree': '[role="grid"][aria-labelledby="files"]',
+            'issues': '#issues-tab-count',
+            'pull_requests': '#pull-requests-tab-count',
+            'releases': '#releases-tab-count',
+            'last_commit': 'relative-time',
+            'branches': '.ml-3.wb-break-word',
+            'topics': '[data-ga-click="Topic, repository page"]',
+            'language_stats': '.Progress.float-left.bg-gray-dark'
+        }
         self.vectorizer = TfidfVectorizer()
         self.schema_generator = SchemaGenerator()
 
-    def extract_main_content(self, html_content):
+    def extract_main_content(self, html_content, url=None):
         soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Check if it's a GitHub page
+        if url and 'github.com' in url:
+            return self._extract_github_content(soup, url)
 
         for element in soup.find_all(['script', 'style', 'noscript']):
             element.decompose()
@@ -95,6 +113,76 @@ class ContentExtractor:
         score += direct_p_count * 20
 
         return score
+
+    def _extract_github_content(self, soup, url):
+        """Extract content specifically from GitHub pages"""
+        content = {
+            'type': 'github',
+            'text': '',
+            'html': '',
+            'metadata': {}
+        }
+
+        # Extract repository information
+        for key, selector in self.github_selectors.items():
+            elements = soup.select(selector)
+            if elements:
+                if key == 'language_stats':
+                    # Parse language statistics
+                    stats = {}
+                    for lang_el in elements:
+                        lang_name = lang_el.find_previous_sibling('span')
+                        if lang_name:
+                            percentage = lang_el.get('aria-valuenow', '0')
+                            stats[lang_name.text.strip()] = float(percentage)
+                    content['metadata']['languages'] = stats
+                else:
+                    value = [el.get_text(strip=True) for el in elements]
+                    content['metadata'][key] = value[0] if len(value) == 1 else value
+
+        # Extract README content
+        readme = soup.select_one(self.github_selectors['readme'])
+        if readme:
+            content['text'] = self._extract_clean_text(readme)
+            content['html'] = str(readme)
+            content['word_count'] = len(content['text'].split())
+
+        # Extract file tree
+        file_tree = soup.select_one(self.github_selectors['file_tree'])
+        if file_tree:
+            content['metadata']['files'] = self._extract_file_tree(file_tree)
+
+        # Extract repository title
+        content['title'] = (
+            content['metadata'].get('repo_name', '') or 
+            soup.title.get_text() if soup.title else ""
+        )
+
+        return content
+
+    def _extract_file_tree(self, file_tree_element):
+        """Extract repository file structure"""
+        files = []
+        for row in file_tree_element.select('[role="row"]'):
+            name_element = row.select_one('[role="rowheader"] a')
+            if name_element:
+                item = {
+                    'name': name_element.text.strip(),
+                    'path': name_element.get('href', '').strip(),
+                    'type': 'file'
+                }
+                
+                # Determine if it's a directory
+                if row.select_one('.octicon-file-directory'):
+                    item['type'] = 'directory'
+                
+                # Get last commit message if available
+                commit_message = row.select_one('[role="gridcell"] a[aria-label]')
+                if commit_message:
+                    item['last_commit'] = commit_message.get('aria-label', '').strip()
+                
+                files.append(item)
+        return files
 
     def _extract_clean_text(self, element):
         texts = []

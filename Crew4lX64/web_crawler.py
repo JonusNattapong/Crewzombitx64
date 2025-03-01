@@ -24,6 +24,15 @@ class WebCrawler:
         self.include_pattern = None
         self.exclude_pattern = None
         self.allow_subdomains = False
+        self.github_base_paths = {
+            'repo': '/[^/]+/[^/]+$',
+            'tree': '/[^/]+/[^/]+/tree/[^/]+',
+            'blob': '/[^/]+/[^/]+/blob/[^/]+',
+            'raw': '/[^/]+/[^/]+/raw/[^/]+',
+            'issues': '/[^/]+/[^/]+/issues',
+            'pulls': '/[^/]+/[^/]+/pulls',
+            'releases': '/[^/]+/[^/]+/releases'
+        }
         self._setup_logging()
 
     def _setup_logging(self):
@@ -80,11 +89,31 @@ class WebCrawler:
             self.browser.close()  # Synchronous call
 
     def should_crawl_url(self, url: str, base_domain: str) -> bool:
-        """Check if URL should be crawled based on patterns and domain rules"""
+        """Check if URL should be crawled based on patterns, domain rules and GitHub paths"""
         if not url.startswith(('http://', 'https://')):
             return False
             
         parsed_url = urlparse(url)
+        
+        # Handle GitHub-specific paths
+        if 'github.com' in parsed_url.netloc:
+            path = parsed_url.path
+            
+            # Skip GitHub search and non-repository paths
+            if any(segment in path for segment in [
+                '/search', '/marketplace', '/sponsors', '/settings',
+                '/notifications', '/explore', '/topics'
+            ]):
+                return False
+                
+            # Check if path matches any valid GitHub repository pattern
+            is_github_path = any(
+                re.search(pattern, path)
+                for pattern in self.github_base_paths.values()
+            )
+            
+            if not is_github_path:
+                return False
         
         if not self.allow_subdomains and parsed_url.netloc != base_domain:
             return False
@@ -289,10 +318,11 @@ class WebCrawler:
         return media
 
     async def _extract_links(self, html: str, base_url: str) -> List[Dict]:
-        """Extract links from HTML"""
+        """Extract links from HTML with special handling for GitHub pages"""
         soup = BeautifulSoup(html, 'html.parser')
         links = []
         base_domain = urlparse(base_url).netloc
+        is_github = 'github.com' in base_domain
 
         for a in soup.find_all('a', href=True):
             href = a['href']
@@ -305,6 +335,23 @@ class WebCrawler:
 
             domain = urlparse(abs_url).netloc
             link_type = 'internal' if domain == base_domain else 'external'
+
+            # Special handling for GitHub links
+            if is_github:
+                path = urlparse(abs_url).path
+                
+                # Determine GitHub-specific link type
+                for path_type, pattern in self.github_base_paths.items():
+                    if re.search(pattern, path):
+                        link_type = f'github_{path_type}'
+                        break
+
+                # Skip certain GitHub links
+                if any(segment in path for segment in [
+                    '/search', '/marketplace', '/sponsors', '/settings',
+                    '/notifications', '/explore', '/topics'
+                ]):
+                    continue
 
             links.append({
                 'url': abs_url,

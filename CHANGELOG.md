@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-03-01
+
+### Added
+- Enhanced GitHub repository integration
+  - Intelligent path type detection (root/tree/blob)
+  - Repository metadata extraction (languages, stars, forks, topics)
+  - Improved README parsing with markdown structure preservation
+  - Directory tree visualization with file/folder icons
+  - File content extraction with proper formatting
+  - Repository description and metadata handling
+  - GitHub-specific selectors and path patterns
+  - Smart repository navigation system
+
+### Changed
+- Improved content extraction in content_extractor.py
+  - Added GitHub-specific selectors and content handlers
+  - Enhanced markdown structure preservation
+  - Better metadata organization
+- Enhanced web crawler in web_crawler.py
+  - Added GitHub path pattern recognition
+  - Smarter link filtering for repositories
+  - Improved navigation handling
+- Updated CrewAPIX64.py
+  - Added specialized GitHub content handlers
+  - Improved error recovery and fallbacks
+  - Better content organization in output
+
+## [1.2.1] - 2025-03-01
+
+### Fixed
+- Resolved issues with browser mode in web crawler
+  - Fixed "await expression" errors
+  - Improved browser setup and navigation
+  - Correctly handled async/sync operations
+  - Enhanced error handling and resource cleanup
+
 ## [1.2.0] - 2025-02-28
 
 ### Added
@@ -39,15 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved proxy handling system
 - Enhanced rate limiting algorithm
 - Strengthened data protection measures
-
-## [1.2.1] - 2025-03-01
-
-### Fixed
-- Resolved issues with browser mode in web crawler
-  - Fixed "await expression" errors
-  - Improved browser setup and navigation
-  - Correctly handled async/sync operations
-  - Enhanced error handling and resource cleanup
 
 ## [1.1.0] - 2025-02-28
 
