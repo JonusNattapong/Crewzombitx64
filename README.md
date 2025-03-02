@@ -16,7 +16,10 @@
 - [📋 Table of Contents](#-table-of-contents)
 - [Overview](#overview)
 - [📦 Releases](#-releases)
-  - [Version 1.2.0 (Latest)](#version-120-latest)
+  - [Version 1.2.3 (Latest)](#version-123-latest)
+  - [Version 1.2.2](#version-122)
+  - [Version 1.2.1](#version-121)
+  - [Version 1.2.0](#version-120)
   - [Version 1.1.0](#version-110)
   - [Version 1.0.0](#version-100)
   - [Version 0.9.0 (Beta)](#version-090-beta)
@@ -64,7 +67,34 @@
 
 ## 📦 Releases
 
-### Version 1.2.0 (Latest)
+### Version 1.2.3 (Latest)
+
+- **Enhanced Legal Compliance**:
+  - Improved robots.txt compliance with detailed error handling
+  - Terms of Service warning system for each domain
+  - PDF permission warnings and checks
+  - GDPR compliance warnings and personal data detection
+  - Copyright protection warnings and content scanning
+  - One-time warning system to avoid duplicates
+  - Smart content analysis for personal and copyrighted material
+  - Improved data protection measures
+
+### Version 1.2.2
+
+- **Enhanced GitHub repository integration**
+  - Repository metadata extraction
+  - README parsing improvements
+  - Directory tree visualization
+  - File content handling enhancements
+
+### Version 1.2.1
+
+- **Browser Mode Improvements**
+  - Fixed async/sync operations
+  - Enhanced error handling
+  - Improved resource cleanup
+
+### Version 1.2.0
 
 - **Enhanced Security and Legal Compliance**:
   - Improved sensitive data detection (API keys, passwords, tokens)
@@ -161,6 +191,10 @@
   - Advanced sensitive data detection and redaction
   - Automatic detection of API keys, passwords, and tokens
   - Secure handling of credentials and sensitive information
+  - Improved personal data identification (GDPR compliance)
+  - Copyright content detection and warnings
+  - PDF permission checking system
+  - Terms of Service compliance alerts
 
 - **Access Control**:
   - Extended internal network protection
@@ -173,9 +207,14 @@
   - Response time monitoring and optimization
 
 - **Legal Compliance**:
-  - Advanced robots.txt compliance system
+  - Enhanced robots.txt compliance with error handling
   - Rate limiting with domain-specific controls
   - Privacy-focused configuration defaults
+  - GDPR compliance warnings and checks
+  - Copyright protection system
+  - Document permission verification
+  - Terms of Service warning system
+  - One-time warning mechanism
 
 ### 📝 Content Processing
 
