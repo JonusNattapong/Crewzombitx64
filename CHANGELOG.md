@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2025-03-03
+
+### Added
+- Enhanced legal compliance features
+  - Added can_scrape() method in security_manager.py
+  - Implemented robots.txt checking with detailed error handling
+  - Added Terms of Service warning system
+  - Added PDF permission warnings
+  - Added GDPR compliance warnings
+  - Added copyright protection warnings
+  - Enhanced personal data detection
+  - Added content scanning for copyrighted material
+  - Implemented one-time warning system to avoid duplicates
+
+### Changed
+- Updated security_manager.py with improved robots.txt handling
+- Enhanced content_extractor.py with PDF detection
+- Improved data_exporter.py with GDPR and copyright checks
+
 ## [1.2.2] - 2025-03-01
 
 ### Added

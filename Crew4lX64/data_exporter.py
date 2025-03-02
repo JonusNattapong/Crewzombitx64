@@ -1,16 +1,19 @@
 import json
 import csv
 import os
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import time
+from security_manager import SecurityManager
 from urllib.parse import urlparse
 import aiohttp
 import asyncio
 import re
+import logging
 
 class DataExporter:
     def __init__(self):
         self.session = None
+        self.security_manager = SecurityManager()
 
     async def _get_file_size(self, url: str) -> str:
         """Get file size in human readable format"""
@@ -59,8 +62,24 @@ class DataExporter:
             
         return [img for img in images if not is_tracking_pixel(img)]
 
+    def _check_export_warnings(self, data: Optional[Dict] = None) -> None:
+        """Show GDPR and copyright warnings before exporting data"""
+        self.security_manager.show_warning('gdpr')
+        self.security_manager.show_warning('copyright')
+        
+        # Additional checks on data content
+        if data:
+            # Check if data contains personal information
+            if any(key in str(data).lower() for key in ['email', 'phone', 'address', 'name']):
+                logging.warning("\n⚠️ This data may contain personal information. Ensure GDPR compliance.")
+            
+            # Check for potential copyrighted content
+            if any(key in str(data).lower() for key in ['copyright', '©', 'all rights reserved']):
+                logging.warning("\n⚠️ This content may be copyrighted. Verify usage rights.")
+
     async def export_to_markdown(self, data: Dict, filename: str) -> str:
         """Export data to Markdown file with improved formatting"""
+        self._check_export_warnings(data)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         metadata = self._extract_metadata(data)
         
@@ -200,6 +219,7 @@ class DataExporter:
 
     async def export_to_json(self, data: Dict, filename: str, pretty: bool = True) -> str:
         """Export data to JSON file"""
+        self._check_export_warnings(data)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', encoding='utf-8') as f:
             if pretty:
@@ -210,6 +230,7 @@ class DataExporter:
 
     async def export_to_csv(self, data: Dict, filename: str) -> str:
         """Export data to CSV file"""
+        self._check_export_warnings(data)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         
         # Flatten the data structure

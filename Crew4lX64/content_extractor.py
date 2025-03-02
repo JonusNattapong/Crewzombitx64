@@ -3,17 +3,19 @@ import json
 import logging
 import concurrent.futures
 from bs4 import BeautifulSoup
-from typing import Dict, List
+from typing import Dict, List, Optional
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from lxml import html
 from jsonpath_ng import parse as jsonpath_parse
 from schema_generator import SchemaGenerator
+from security_manager import SecurityManager
 
 logger = logging.getLogger(__name__)
 
 class ContentExtractor:
     def __init__(self):
+        self.security_manager = SecurityManager()
         self.boilerplate_selectors = [
             'header', 'footer', 'nav', '.sidebar', '#sidebar',
             '.navigation', '.menu', '.ad', '.advertisement',
@@ -36,7 +38,14 @@ class ContentExtractor:
         self.vectorizer = TfidfVectorizer()
         self.schema_generator = SchemaGenerator()
 
-    def extract_main_content(self, html_content, url=None):
+    def is_pdf_content(self, content: str) -> bool:
+        """Check if content appears to be PDF"""
+        return content.startswith('%PDF-') or '.pdf' in content.lower()[:1024]
+
+    def extract_main_content(self, html_content, url: Optional[str] = None):
+        # Check for PDF content
+        if self.is_pdf_content(html_content):
+            self.security_manager.show_warning('pdf')
         soup = BeautifulSoup(html_content, 'html.parser')
 
         # Check if it's a GitHub page

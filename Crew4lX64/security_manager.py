@@ -7,6 +7,7 @@ from urllib.robotparser import RobotFileParser
 class SecurityManager:
     def __init__(self):
         self.robot_parsers = {}
+        self.warnings_shown = set()  # Track shown warnings
         self.banned_patterns = [
             r'\.htaccess',
             r'\.env',
@@ -40,7 +41,39 @@ class SecurityManager:
 
         return url
 
+    def show_warning(self, warning_type, url=None):
+        """Show a warning message only once per type/url combination"""
+        warning_key = f"{warning_type}:{url}" if url else warning_type
+        if warning_key not in self.warnings_shown:
+            warnings = {
+                'tos': "\n⚠️ WARNING: Please review the website's Terms of Service before scraping data.\n"
+                      "Make sure your use complies with their policies.",
+                'gdpr': "\n⚠️ GDPR WARNING: Ensure you have proper consent and legal basis for collecting\n"
+                       "and storing personal data. Follow GDPR requirements for data processing.",
+                'copyright': "\n⚠️ COPYRIGHT WARNING: Verify that you have the right to use and store\n"
+                           "the content. Respect intellectual property rights.",
+                'pdf': "\n⚠️ PDF WARNING: Before downloading or processing PDFs, ensure they are publicly\n"
+                      "available or you have permission to access them."
+            }
+            if warning_type in warnings:
+                logging.warning(warnings[warning_type])
+                self.warnings_shown.add(warning_key)
+
+    def can_scrape(self, url, user_agent):
+        """Check if scraping is allowed for this URL"""
+        # Show Terms of Service warning for new domains
+        parsed = urlparse(url)
+        domain = parsed.netloc
+        self.show_warning('tos', domain)
+        
+        # Check robots.txt
+        is_allowed = self.check_robots_txt(url, user_agent)
+        if not is_allowed:
+            logging.warning(f"\n⚠️ Scraping not allowed by robots.txt for URL: {url}")
+        return is_allowed
+
     def check_robots_txt(self, url, user_agent):
+        """Check if URL is allowed by robots.txt"""
         parsed = urlparse(url)
         robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
         
@@ -49,8 +82,13 @@ class SecurityManager:
             rp.set_url(robots_url)
             try:
                 response = requests.get(robots_url, timeout=5)
-                rp.parse(response.text.splitlines())
-            except:
+                if response.status_code == 200:
+                    rp.parse(response.text.splitlines())
+                else:
+                    logging.warning(f"Could not fetch robots.txt ({response.status_code}), assuming crawling is allowed")
+                    rp.allow_all = True
+            except Exception as e:
+                logging.warning(f"Error fetching robots.txt: {e}, assuming crawling is allowed")
                 rp.allow_all = True
             self.robot_parsers[robots_url] = rp
         
