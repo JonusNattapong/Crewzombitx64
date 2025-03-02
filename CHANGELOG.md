@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-03-03
+
+### Added
+- Dark mode versions for all main scripts:
+  - `CrewAPIDarkX64.py`: API version with enhanced dark mode interface
+  - `CrewNormalDarkX64.py`: Local version with dark mode support
+  - `CrewColabDarkX64.ipynb`: Google Colab version with dark mode
+- Enhanced warnings and disclaimers in both English and Thai
+- Improved visual feedback with emojis and progress indicators
+
 ## [1.2.3] - 2025-03-03
 
 ### Added

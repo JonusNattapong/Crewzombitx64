@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="zombitx64",
-    version="1.2.1",
+    version="1.4.0",
     author="JonusNattapong",
     author_email="zombitx64@gmail.com",  # Add your email here
     description="A powerful web scraping and content analysis tool with AI integration",
@@ -31,12 +31,18 @@ setup(
         "python-dotenv>=0.19.0",
         "mistralai>=0.0.1",
         "flask>=2.0.1",
+        "colorama>=0.4.6",  # For cross-platform color support
+        "nltk>=3.6.0",     # For text processing
     ],
     entry_points={
         "console_scripts": [
+            # Standard versions
             "zombitx64-normal=zombitx64.normal:main",
             "zombitx64-api=zombitx64.api:main",
             "zombitx64-web=zombitx64.app:main",
+            # Dark mode versions
+            "zombitx64-normal-dark=zombitx64.normal_dark:main",
+            "zombitx64-api-dark=zombitx64.api_dark:main",
         ],
     },
 )
