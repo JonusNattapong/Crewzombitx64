@@ -5,6 +5,10 @@ from datetime import datetime
 import os
 from mistralai import Mistral
 from dotenv import load_dotenv
+from Crew4lX64.security_manager import SecurityManager
+
+# Initialize security manager
+security_manager = SecurityManager()
 
 # โหลดค่า API Key จากไฟล์ .env
 load_dotenv()
@@ -23,15 +27,26 @@ except Exception as e:
     print("⚠️ Please check if your API key is valid")
     exit(1)
 
-def check_robots_txt(url):
-    """Check if crawling is allowed by robots.txt"""
-    try:
-        response = requests.get(url + "/robots.txt")
-        response.raise_for_status()
-        return "Disallow" not in response.text
-    except Exception as e:
-        print(f"Error checking robots.txt: {e}")
-        return True  # Assume allowed if error
+def check_legal_compliance(url):
+    """Check legal compliance for the URL"""
+    print("\n🔒 Checking legal compliance...")
+    
+    # Check if we can scrape this URL
+    if not security_manager.can_scrape(url, "CrewAPIX64/1.2.3"):
+        print("🚫 URL is not allowed by robots.txt")
+        return False
+    
+    # Show ToS warning
+    print("📜 Please ensure you comply with the site's Terms of Service")
+    
+    # Show GDPR warning
+    security_manager.show_warning('gdpr')
+    
+    # Show copyright warning
+    security_manager.show_warning('copyright')
+    
+    print("✅ Legal compliance checks complete")
+    return True
 
 def extract_repository_data(soup):
     """Extract metadata about the repository"""
@@ -185,8 +200,8 @@ def scrape_content(url):
     """Main function for scraping content from URLs"""
     print(f"\n🔍 Starting to scrape: {url}")
     
-    if not check_robots_txt(url):
-        print("❌ Crawling disallowed by robots.txt")
+    # Perform legal compliance checks
+    if not check_legal_compliance(url):
         return None
 
     try:
@@ -409,6 +424,7 @@ def main():
     """Main program entry point"""
     print_ascii_art()
     print("\n🚀 === Web Scraping and Summarization Tool === 🚀")
+    print("Version 1.2.3 - Enhanced Legal Compliance")
     
     print("\n📌 Enter GitHub repository URL (or press Enter for default):")
     user_input = input("➡️ ").strip()
@@ -430,9 +446,18 @@ def main():
         content = scrape_content(repo_url)
 
     if content:
-        print("\n[*] Processing scraped content...")
+        print("\n⚡ Processing scraped content...")
+        print("📊 Analyzing text structure...")
         summary = summarize_with_mistral(content['text'])
         content['summary'] = summary
+        
+        # Show warning if content might contain personal data
+        if any(term in content['text'].lower() for term in ['email', 'phone', 'address', 'name']):
+            security_manager.show_warning('gdpr')
+        
+        # Show warning if content might be copyrighted
+        if any(term in content['text'].lower() for term in ['copyright', '©', 'all rights reserved']):
+            security_manager.show_warning('copyright')
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         json_file = f"scraped_output/scraped_{timestamp}.json"

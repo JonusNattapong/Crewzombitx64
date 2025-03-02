@@ -7,6 +7,10 @@ import urllib.parse
 import os
 from nltk.tokenize import sent_tokenize
 import nltk
+from Crew4lX64.security_manager import SecurityManager
+
+# Initialize security manager
+security_manager = SecurityManager()
 
 try:
     nltk.data.find('tokenizers/punkt')
@@ -24,45 +28,33 @@ def print_ascii_art():
     """
     print(ascii_art)
 
-def check_robots_txt(url):
-    try:
-        parsed_url = urllib.parse.urlparse(url)
-        if not parsed_url.netloc:
-            # Handle URLs without scheme (e.g., "example.com/page.html")
-            parsed_url = urllib.parse.urlparse("http://" + url)
-        robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
-        print(f"Parsed URL: {parsed_url}")  # Debug print
-        print(f"Robots URL: {robots_url}")  # Debug print
-        response = requests.get(robots_url)
-        response.raise_for_status()
-
-        # More robust parsing for Disallow directives with wildcards
-        for line in response.text.splitlines():
-            if line.lower().startswith('user-agent:') and not re.match(r'user-agent:\s*\*.*', line.lower()):
-                continue # Skip lines not for our user-agent
-            if line.startswith('Disallow:'):
-                parts = line.split(': ')
-                if len(parts) > 1:
-                    disallowed_path = parts[1].strip()
-                    # Handle wildcards
-                    if '*' in disallowed_path:
-                        regex_pattern = disallowed_path.replace('*', '.*')
-                        if re.match(regex_pattern, parsed_url.path):
-                            return False
-                    elif disallowed_path == '/':
-                        return False
-                    elif parsed_url.path.startswith(disallowed_path):
-                        return False
-        return True
-    except Exception as e:
-        print(f"Error checking robots.txt: {str(e)}")
-        return True  # Assume allowed if error
+def check_legal_compliance(url):
+    """Check legal compliance for the URL"""
+    print("\n🔒 Checking legal compliance...")
+    
+    # Check if we can scrape this URL
+    if not security_manager.can_scrape(url, "CrewNormalX64/1.2.3"):
+        print("🚫 URL is not allowed by robots.txt")
+        return False
+    
+    # Show ToS warning
+    print("📜 Please ensure you comply with the site's Terms of Service")
+    
+    # Show GDPR warning
+    security_manager.show_warning('gdpr')
+    
+    # Show copyright warning
+    security_manager.show_warning('copyright')
+    
+    print("✅ Legal compliance checks complete")
+    return True
 
 def scrape_content(url):
+    """Main function for scraping content from URLs"""
     print(f"\n🔍 Starting to scrape: {url}")
     
-    if not check_robots_txt(url):
-        print("❌ Crawling disallowed by robots.txt")
+    # Perform legal compliance checks
+    if not check_legal_compliance(url):
         return None
 
     try:
@@ -295,6 +287,7 @@ def save_content_markdown(content, output_file):
 def main():
     print_ascii_art()
     print("\n🚀 === Web Scraping and Summarization Tool === 🚀")
+    print("Version 1.2.3 - Enhanced Legal Compliance")
     
     print("\n📌 Enter GitHub repository URL (or press Enter for default):")
     user_input = input("➡️ ").strip()
@@ -318,10 +311,19 @@ def main():
         content = scrape_content(repo_url)
 
     if content:
-        print("\n[*] Processing scraped content...")
+        print("\n⚡ Processing scraped content...")
+        print("📊 Analyzing text structure...")
         # Create basic summary without API
         summary = summarize_content(content['text'])
         content['summary'] = summary
+        
+        # Show warning if content might contain personal data
+        if any(term in content['text'].lower() for term in ['email', 'phone', 'address', 'name']):
+            security_manager.show_warning('gdpr')
+        
+        # Show warning if content might be copyrighted
+        if any(term in content['text'].lower() for term in ['copyright', '©', 'all rights reserved']):
+            security_manager.show_warning('copyright')
 
         # Save content with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
