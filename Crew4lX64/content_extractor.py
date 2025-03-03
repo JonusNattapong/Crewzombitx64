@@ -8,8 +8,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from lxml import html
 from jsonpath_ng import parse as jsonpath_parse
-from schema_generator import SchemaGenerator
-from security_manager import SecurityManager
+from Crew4lX64.schema_generator import SchemaGenerator
+from Crew4lX64.security_manager import SecurityManager
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,13 @@ class ContentExtractor:
             '.navigation', '.menu', '.ad', '.advertisement',
             '.cookie-banner', '.popup', '#cookie-consent'
         ]
+        self.arxiv_selectors = {
+            'title': 'h1',
+            'authors': '.authors .author',
+            'abstract': '.abstract p',
+            'categories': '.categories .category',
+            'metadata': '.metadata p'
+        }
         self.github_selectors = {
             'repo_name': '.author.flex-self-stretch a, strong[itemprop="name"] a',
             'repo_desc': '.f4.my-3',
@@ -48,6 +55,10 @@ class ContentExtractor:
             self.security_manager.show_warning('pdf')
         soup = BeautifulSoup(html_content, 'html.parser')
 
+        # Check if it's an arXiv page
+        if url and 'arxiv.org' in url:
+            return self._extract_arxiv_content(soup, url)
+            
         # Check if it's a GitHub page
         if url and 'github.com' in url:
             return self._extract_github_content(soup, url)
@@ -166,6 +177,42 @@ class ContentExtractor:
             content['metadata'].get('repo_name', '') or 
             soup.title.get_text() if soup.title else ""
         )
+
+        return content
+
+    def _extract_arxiv_content(self, soup, url):
+        """Extract content specifically from arXiv HTML"""
+        content = {
+            'type': 'arxiv',
+            'text': '',
+            'html': '',
+            'metadata': {}
+        }
+
+        # Extract metadata using selectors
+        for key, selector in self.arxiv_selectors.items():
+            elements = soup.select(selector)
+            if elements:
+                if key == 'authors':
+                    content['metadata']['authors'] = [
+                        {'name': el.get_text(strip=True)} 
+                        for el in elements
+                    ]
+                else:
+                    values = [el.get_text(strip=True) for el in elements]
+                    content['metadata'][key] = values[0] if len(values) == 1 else values
+
+        # Extract abstract and main text
+        abstract = soup.select_one('.abstract')
+        if abstract:
+            content['text'] = self._extract_clean_text(abstract)
+            content['html'] = str(abstract)
+            content['word_count'] = len(content['text'].split())
+
+        # Get the title
+        content['title'] = content['metadata'].get('title', '')
+        if not content['title'] and soup.title:
+            content['title'] = soup.title.get_text()
 
         return content
 

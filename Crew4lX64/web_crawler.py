@@ -6,10 +6,11 @@ import time
 from typing import Optional, Dict, List
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from browser_manager import BrowserManager
-from content_extractor import ContentExtractor
-from rate_limiter import RateLimiter
-from proxy_manager import ProxyManager
+from Crew4lX64.browser_manager import BrowserManager
+from Crew4lX64.rate_limiter import RateLimiter
+from Crew4lX64.proxy_manager import ProxyManager
+from Crew4lX64.content_extractor import ContentExtractor
+from Crew4lX64.arxiv_handler import ArxivHandler
 
 class WebCrawler:
     def __init__(self):
@@ -20,6 +21,7 @@ class WebCrawler:
         self.session = None
         self.rate_limiter = RateLimiter()
         self.proxy_manager = None
+        self.arxiv_handler = ArxivHandler()
         self.respect_robots = True
         self.include_pattern = None
         self.exclude_pattern = None
@@ -78,15 +80,17 @@ class WebCrawler:
                 connector=conn,
                 timeout=timeout,
                 headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    'User-Agent': 'CrewZombitX64/1.0 (Scholarly Paper Analysis Tool)'
                 }
             )
+            await self.arxiv_handler.setup()
 
     async def close(self):
         if self.session:
             await self.session.close()
         if self.browser:
             self.browser.close()  # Synchronous call
+        await self.arxiv_handler.close()
 
     def should_crawl_url(self, url: str, base_domain: str) -> bool:
         """Check if URL should be crawled based on patterns, domain rules and GitHub paths"""
@@ -163,10 +167,18 @@ class WebCrawler:
                 return None
 
             try:
-                result['content'] = await self.data_extractor.extract_all(html_content)
+                extracted_content = await self.data_extractor.extract_all(html_content)
+                
+                # Include text and HTML content from extract_main_content
+                main_content = self.data_extractor.extract_main_content(html_content)
+                if main_content:
+                  extracted_content['text'] = main_content.get('text', '')
+                  extracted_content['html'] = main_content.get('html', '')
+                
+                result['content'] = extracted_content
                 result['media'] = await self._extract_media(html_content, url)
                 result['links'] = await self._extract_links(html_content, url)
-                
+
                 # Set titles for article links
                 for link in result['links']:
                     if link['url'].endswith('/'):
@@ -211,6 +223,15 @@ class WebCrawler:
 
     async def _fetch_content(self, url: str, retries: int = 3) -> Optional[str]:
         """Fetch content with retries and error handling"""
+        # Check if URL is from arXiv
+        if 'arxiv.org' in url:
+            metadata = await self.arxiv_handler.get_paper_metadata(url)
+            if metadata:
+                # Convert metadata to HTML for consistent processing
+                html_content = self._convert_arxiv_metadata_to_html(metadata)
+                return html_content
+            
+        # If not arXiv or metadata fetch failed, proceed with normal fetching
         for attempt in range(retries):
             try:
                 if self.browser and self.browser.driver:
@@ -317,12 +338,69 @@ class WebCrawler:
 
         return media
 
+    def _convert_arxiv_metadata_to_html(self, metadata: Dict) -> str:
+        """Convert arXiv metadata to HTML format for consistent processing"""
+        html = ['<!DOCTYPE html><html><head><title>{}</title></head><body>'.format(metadata.get('title', ''))]
+        
+        # Add title
+        if metadata.get('title'):
+            html.append(f'<h1>{metadata["title"]}</h1>')
+            
+        # Add authors
+        if metadata.get('authors'):
+            html.append('<div class="authors">')
+            for author in metadata['authors']:
+                author_text = author['name']
+                if author.get('affiliation'):
+                    author_text += f' ({author["affiliation"]})'
+                html.append(f'<div class="author">{author_text}</div>')
+            html.append('</div>')
+            
+        # Add categories
+        if metadata.get('categories'):
+            html.append('<div class="categories">')
+            html.append('<h2>Categories</h2>')
+            for category in metadata['categories']:
+                html.append(f'<span class="category">{category}</span>')
+            html.append('</div>')
+            
+        # Add abstract/summary
+        if metadata.get('summary'):
+            html.append('<div class="abstract">')
+            html.append('<h2>Abstract</h2>')
+            html.append(f'<p>{metadata["summary"]}</p>')
+            html.append('</div>')
+            
+        # Add links
+        if metadata.get('links'):
+            html.append('<div class="links">')
+            html.append('<h2>Links</h2>')
+            for rel, link_data in metadata['links'].items():
+                html.append(f'<a href="{link_data["href"]}" rel="{rel}">{link_data["title"] or rel}</a>')
+            html.append('</div>')
+            
+        # Add additional metadata
+        html.append('<div class="metadata">')
+        if metadata.get('journal_ref'):
+            html.append(f'<p>Journal Reference: {metadata["journal_ref"]}</p>')
+        if metadata.get('doi'):
+            html.append(f'<p>DOI: {metadata["doi"]}</p>')
+        if metadata.get('published'):
+            html.append(f'<p>Published: {metadata["published"]}</p>')
+        if metadata.get('updated'):
+            html.append(f'<p>Updated: {metadata["updated"]}</p>')
+        html.append('</div>')
+        
+        html.append('</body></html>')
+        return '\n'.join(html)
+
     async def _extract_links(self, html: str, base_url: str) -> List[Dict]:
-        """Extract links from HTML with special handling for GitHub pages"""
+        """Extract links from HTML with special handling for GitHub pages and arXiv links"""
         soup = BeautifulSoup(html, 'html.parser')
         links = []
         base_domain = urlparse(base_url).netloc
         is_github = 'github.com' in base_domain
+        is_arxiv = 'arxiv.org' in base_domain
 
         for a in soup.find_all('a', href=True):
             href = a['href']
@@ -335,6 +413,10 @@ class WebCrawler:
 
             domain = urlparse(abs_url).netloc
             link_type = 'internal' if domain == base_domain else 'external'
+
+            # Handle arXiv-specific links
+            if 'arxiv.org' in domain:
+                link_type = 'arxiv'
 
             # Special handling for GitHub links
             if is_github:
