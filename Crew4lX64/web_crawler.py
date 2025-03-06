@@ -13,11 +13,14 @@ from Crew4lX64.content_extractor import ContentExtractor
 from Crew4lX64.arxiv_handler import ArxivHandler
 
 class WebCrawler:
-    def __init__(self):
+    def __init__(self, max_cache_size: int = 1000, max_retries: int = 3):
         self.browser = None
         self.data_extractor = ContentExtractor()
-        self.visited_urls = set()
-        self.cache = {}
+        self.visited_urls: Dict[str, float] = {}  # URL -> timestamp
+        self.cache: Dict[str, Dict] = {}
+        self.cache_timestamps: Dict[str, float] = {}  # URL -> timestamp
+        self.max_cache_size = max_cache_size
+        self.max_retries = max_retries
         self.session = None
         self.rate_limiter = RateLimiter()
         self.proxy_manager = None
@@ -26,6 +29,15 @@ class WebCrawler:
         self.include_pattern = None
         self.exclude_pattern = None
         self.allow_subdomains = False
+        self.robots_cache: Dict[str, Dict] = {}  # domain -> {rules, timestamp}
+        self.robots_cache_ttl = 3600  # 1 hour
+        self.stats = {
+            'pages_crawled': 0,
+            'errors': 0,
+            'start_time': None,
+            'total_bytes': 0,
+            'success_rate': 0.0
+        }
         self.github_base_paths = {
             'repo': '/[^/]+/[^/]+$',
             'tree': '/[^/]+/[^/]+/tree/[^/]+',
@@ -37,7 +49,35 @@ class WebCrawler:
         }
         self._setup_logging()
 
-    def _setup_logging(self):
+    def _cleanup_cache(self) -> None:
+        """Remove old entries from cache if it exceeds max size."""
+        if len(self.cache) > self.max_cache_size:
+            # Sort by timestamp and keep only the newest entries
+            sorted_urls = sorted(
+                self.cache_timestamps.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:self.max_cache_size]
+            
+            new_cache = {}
+            new_timestamps = {}
+            for url, timestamp in sorted_urls:
+                new_cache[url] = self.cache[url]
+                new_timestamps[url] = timestamp
+            
+            self.cache = new_cache
+            self.cache_timestamps = new_timestamps
+
+    def _cleanup_visited_urls(self, max_age: float = 86400) -> None:
+        """Remove visited URLs older than max_age seconds."""
+        current_time = time.time()
+        self.visited_urls = {
+            url: timestamp
+            for url, timestamp in self.visited_urls.items()
+            if current_time - timestamp < max_age
+        }
+
+    def _setup_logging(self) -> None:
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
@@ -85,12 +125,46 @@ class WebCrawler:
             )
             await self.arxiv_handler.setup()
 
-    async def close(self):
-        if self.session:
-            await self.session.close()
-        if self.browser:
-            self.browser.close()  # Synchronous call
-        await self.arxiv_handler.close()
+    async def close(self) -> None:
+        """Properly close all resources."""
+        try:
+            if self.session and not self.session.closed:
+                await self.session.close()
+            
+            if self.browser:
+                try:
+                    self.browser.close()  # Synchronous call
+                except Exception as e:
+                    logging.error(f"Error closing browser: {e}")
+            
+            await self.arxiv_handler.close()
+            
+            # Save final stats
+            if self.stats['pages_crawled'] > 0:
+                self.stats['success_rate'] = 1 - (self.stats['errors'] / self.stats['pages_crawled'])
+                logging.info(f"Crawling completed. Success rate: {self.stats['success_rate']:.2%}")
+                
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
+        
+        finally:
+            self.session = None
+            self.browser = None
+
+    async def get_stats(self) -> Dict:
+        """Get current crawling statistics."""
+        current_time = time.time()
+        return {
+            **self.stats,
+            'runtime': current_time - (self.stats['start_time'] or current_time),
+            'cache_size': len(self.cache),
+            'visited_urls': len(self.visited_urls),
+            'memory_usage': {
+                'cache_size': len(self.cache),
+                'visited_urls': len(self.visited_urls),
+                'robots_cache': len(self.robots_cache)
+            }
+        }
 
     def should_crawl_url(self, url: str, base_domain: str) -> bool:
         """Check if URL should be crawled based on patterns, domain rules and GitHub paths"""
@@ -132,13 +206,25 @@ class WebCrawler:
 
         return True
 
-    async def crawl(self, url: str, depth: int = 1, **kwargs) -> Optional[Dict]:
+    async def crawl(self, url: str, depth: int = 1, cleanup_interval: int = 100, **kwargs) -> Optional[Dict]:
         try:
-            if url in self.visited_urls or depth <= 0:
+            # Initialize stats if this is the first crawl
+            if not self.stats['start_time']:
+                self.stats['start_time'] = time.time()
+
+            current_time = time.time()
+            if url in self.visited_urls and current_time - self.visited_urls[url] < 3600:
                 return None
 
+            # Check cache with timestamp
             if url in self.cache:
-                return self.cache[url]
+                cache_age = current_time - self.cache_timestamps[url]
+                if cache_age < 3600:  # Cache valid for 1 hour
+                    return self.cache[url]
+                else:
+                    # Remove old cache entry
+                    del self.cache[url]
+                    del self.cache_timestamps[url]
 
             start_time = time.time()
             base_domain = urlparse(url).netloc
@@ -153,7 +239,14 @@ class WebCrawler:
                     logging.warning(f"URL {url} is not allowed by robots.txt")
                     return None
 
-            self.visited_urls.add(url)
+            # Periodic cleanup
+            if self.stats['pages_crawled'] % cleanup_interval == 0:
+                self._cleanup_cache()
+                self._cleanup_visited_urls()
+
+            self.visited_urls[url] = current_time
+            self.stats['pages_crawled'] += 1
+            # Enhanced result structure
             result = {
                 'url': url,
                 'timestamp': time.time(),
@@ -164,6 +257,7 @@ class WebCrawler:
 
             html_content = await self._fetch_content(url)
             if not html_content:
+                self.stats['errors'] += 1
                 return None
 
             try:
@@ -199,7 +293,13 @@ class WebCrawler:
             except Exception as e:
                 logging.error(f"Error processing {url}: {str(e)}")
 
+            # Update cache with timestamp
             self.cache[url] = result
+            self.cache_timestamps[url] = time.time()
+
+            # Update stats
+            if 'size' in result:
+                self.stats['total_bytes'] += result['size']
 
             if depth > 1:
                 child_tasks = [
@@ -445,29 +545,124 @@ class WebCrawler:
         return links
 
     async def check_robots_txt(self, url: str) -> bool:
-        """Check if URL is allowed by robots.txt"""
+        """Check if URL is allowed by robots.txt with caching and proper parsing."""
         if not self.respect_robots:
             return True
 
         parsed = urlparse(url)
-        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+        domain = parsed.netloc
+        robots_url = f"{parsed.scheme}://{domain}/robots.txt"
+        
+        current_time = time.time()
+        
+        # Check cache
+        if domain in self.robots_cache:
+            cache_entry = self.robots_cache[domain]
+            if current_time - cache_entry['timestamp'] < self.robots_cache_ttl:
+                return self._check_cached_rules(cache_entry['rules'], 'CrewZombitX64', parsed.path)
+            else:
+                # Cache expired, remove it
+                del self.robots_cache[domain]
         
         try:
-            async with self.session.get(robots_url) as response:
+            async with self.session.get(robots_url, timeout=10) as response:
                 if response.status != 200:
+                    # Cache the "allow all" result
+                    self.robots_cache[domain] = {
+                        'timestamp': current_time,
+                        'rules': {'*': {'allow': ['*'], 'disallow': []}}
+                    }
                     return True
-                    
+                
                 robots_content = await response.text()
-                return self._check_robots_rules(robots_content, parsed.path)
+                rules = self._parse_robots_txt(robots_content)
+                
+                # Cache the parsed rules
+                self.robots_cache[domain] = {
+                    'timestamp': current_time,
+                    'rules': rules
+                }
+                
+                return self._check_cached_rules(rules, 'CrewZombitX64', parsed.path)
+                
         except Exception as e:
-            logging.warning(f"Error fetching robots.txt: {e}")
+            logging.warning(f"Error fetching robots.txt for {domain}: {str(e)}")
+            # Cache the error state (allow all) for a shorter time
+            self.robots_cache[domain] = {
+                'timestamp': current_time,
+                'rules': {'*': {'allow': ['*'], 'disallow': []}},
+                'error': str(e)
+            }
             return True
 
-    def _check_robots_rules(self, robots_content: str, path: str) -> bool:
-        """Parse robots.txt content and check if path is allowed"""
-        for line in robots_content.split('\n'):
-            if line.lower().startswith('disallow:'):
-                pattern = line.split(':', 1)[1].strip()
-                if pattern and path.startswith(pattern):
-                    return False
-        return True
+    def _check_cached_rules(self, rules: Dict, user_agent: str, path: str) -> bool:
+        """Check if path is allowed using cached robots.txt rules."""
+        # First try to match the specific user agent
+        if user_agent in rules:
+            agent_rules = rules[user_agent]
+        # Then try the wildcard rules
+        elif '*' in rules:
+            agent_rules = rules['*']
+        else:
+            return True  # No applicable rules found
+        
+        # Check if path matches any allow rule first
+        for allow_pattern in agent_rules.get('allow', []):
+            if self._matches_pattern(path, allow_pattern):
+                return True
+                
+        # Then check if it matches any disallow rule
+        for disallow_pattern in agent_rules.get('disallow', []):
+            if self._matches_pattern(path, disallow_pattern):
+                return False
+                
+        return True  # Allowed by default
+
+    def _matches_pattern(self, path: str, pattern: str) -> bool:
+        """Check if a path matches a robots.txt pattern."""
+        if pattern == '*':
+            return True
+            
+        # Convert robots.txt pattern to regex
+        pattern = pattern.replace('.', r'\.')
+        pattern = pattern.replace('*', '.*')
+        pattern = pattern.replace('$', r'\$')
+        pattern = f'^{pattern}'
+        
+        try:
+            return bool(re.match(pattern, path))
+        except re.error:
+            return False
+
+    def _parse_robots_txt(self, content: str) -> Dict:
+        """Parse robots.txt content into structured rules."""
+        rules = {}
+        current_agent = '*'
+        
+        for line in content.split('\n'):
+            # Remove comments and whitespace
+            line = line.split('#')[0].strip().lower()
+            if not line:
+                continue
+                
+            # Split into fields
+            if ':' in line:
+                field, value = line.split(':', 1)
+                field = field.strip()
+                value = value.strip()
+                
+                if field == 'user-agent':
+                    current_agent = value
+                    if current_agent not in rules:
+                        rules[current_agent] = {'allow': [], 'disallow': []}
+                elif field == 'allow' and value:
+                    rules[current_agent]['allow'].append(value)
+                elif field == 'disallow' and value:
+                    rules[current_agent]['disallow'].append(value)
+                elif field == 'crawl-delay':
+                    try:
+                        rules[current_agent]['crawl-delay'] = float(value)
+                    except ValueError:
+                        pass
+                        
+        return rules
