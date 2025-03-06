@@ -10,7 +10,7 @@ def load_config(config_file='crawler_config.json'):
         'rate_limit': 1.0,
         'burst_size': 3,
         'respect_robots': True,
-        'max_depth': 2,
+        'max_depth': 1,
         'timeout': 30,
         
         # Security settings
