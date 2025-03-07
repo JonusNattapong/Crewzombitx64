@@ -42,3 +42,4 @@ llm_resources_*.md
 .DS_Store
 Thumbs.db
 nul
+.github/workflows/python-publish.yml
