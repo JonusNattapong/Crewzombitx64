@@ -61,6 +61,8 @@
 
 ![alt text](image-1.png)
 
+ตัวอย่างการใช้งาน: python Crew4lX64/main.py --url https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/ --preset basic --browser --headless --scroll
+
 **Crewzombitx64** เป็นเครื่องมือรวบรวมข้อมูลจากเว็บไซต์ (Web Crawler) ที่ออกแบบมาเพื่อดึงข้อมูลจากแหล่งต่างๆ บนเว็บอย่างมีประสิทธิภาพและมีความรับผิดชอบ เครื่องมือนี้มีความสามารถหลากหลาย:
 
 - **การรวบรวมข้อมูล**: ดึงข้อมูลจากหน้าเว็บ, GitHub repositories และไฟล์ Markdown
@@ -322,7 +324,7 @@ python Crew4lX64/main.py --interactive
     --proxy              URL พร็อกซี
     --verbose            แสดงผลลัพธ์โดยละเอียด
     ```
-    ตัวอย่างการใช้งาน: python Crew4lX64/main.py --url https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/ --preset basic --browser --headless --scroll
+
     
 ### เว็บอินเตอร์เฟส
 
