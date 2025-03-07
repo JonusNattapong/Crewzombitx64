@@ -322,7 +322,7 @@ python Crew4lX64/main.py --interactive
     --proxy              URL พร็อกซี
     --verbose            แสดงผลลัพธ์โดยละเอียด
     ```
-    ตัวอย่างการใช้งาน: python Crew4lX64/main.py --url https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/#ib-toc-anchor-0 --preset basic --browser --headless --scroll
+    ตัวอย่างการใช้งาน: python Crew4lX64/main.py --url https://originshq.com/blog/top-ai-llm-learning-resource-in-2025/ --preset basic --browser --headless --scroll
     
 ### เว็บอินเตอร์เฟส
 
