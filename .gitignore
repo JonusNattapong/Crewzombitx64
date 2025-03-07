@@ -41,3 +41,4 @@ llm_resources_*.md
 # Operating System
 .DS_Store
 Thumbs.db
+nul
