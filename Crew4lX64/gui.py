@@ -11,8 +11,8 @@ from Crew4lX64.main import main
 class CrawlerGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Crew4lX64 Web Crawler")
-        self.root.geometry("800x600")
+        self.root.title("Crew4l-zombitx64")
+        self.root.geometry("800x800")
         self.config = {}
         self.output_text = None
         self.progress_bar = None
@@ -56,37 +56,49 @@ class CrawlerGUI:
         self.root.quit()
 
     def setup_ui(self):
-        ttk.Label(self.root, text="URL:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.url_entry = ttk.Entry(self.root, width=60)
-        self.url_entry.grid(row=0, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        # ASCII Art Banner
+        ascii_banner = """
+███████╗ ██████╗ ███╗   ███╗██████╗ ██╗████████╗██╗  ██╗ ██████╗ ██╗  ██╗
+╚══███╔╝██╔═══██╗████╗ ████║██╔══██╗██║╚══██╔══╝╚██╗██╔╝██╔════╝ ██║  ██║
+  ███╔╝ ██║   ██║██╔████╔██║██████╔╝██║   ██║    ╚███╔╝ ███████╗ ███████║
+ ███╔╝  ██║   ██║██║╚██╔╝██║██╔══██╗██║   ██║    ██╔██╗ ██╔═══██╗╚════██║
+███████╗╚██████╔╝██║ ╚═╝ ██║██████╔╝██║   ██║   ██╔╝ ██╗╚██████╔╝     ██║
+╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝      ╚═╝
+"""
+        banner_label = ttk.Label(self.root, text=ascii_banner, font=('Courier', 10))
+        banner_label.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
 
-        ttk.Label(self.root, text="Preset:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="URL:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.url_entry = ttk.Entry(self.root, width=60)
+        self.url_entry.grid(row=1, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+
+        ttk.Label(self.root, text="Preset:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
         self.preset_combo = ttk.Combobox(
             self.root, values=['basic', 'aggressive', 'stealth', 'api', 'archive', 'custom']
         )
         self.preset_combo.set('basic')
-        self.preset_combo.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        self.preset_combo.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.root, text="Depth:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="Depth:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
         self.depth_var = tk.StringVar(value='2')
         self.depth_spinbox = ttk.Spinbox(self.root, from_=1, to=5, width=5, textvariable=self.depth_var)
-        self.depth_spinbox.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
+        self.depth_spinbox.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.root, text="Output Format:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="Output Format:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
         self.output_format_combo = ttk.Combobox(self.root, values=['json', 'csv', 'md', 'html', 'all'])
         self.output_format_combo.set('json')
-        self.output_format_combo.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
+        self.output_format_combo.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.root, text="Output Directory:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="Output Directory:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
         self.output_dir_entry = ttk.Entry(self.root, width=50)
         self.output_dir_entry.insert(0, 'scraped_output')
-        self.output_dir_entry.grid(row=4, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.output_dir_entry.grid(row=5, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
         ttk.Button(self.root, text="Browse", command=self.browse_output_dir).grid(
-            row=4, column=2, padx=5, pady=5
+            row=5, column=2, padx=5, pady=5
         )
 
         browser_frame = ttk.LabelFrame(self.root, text="Browser Options", padding=10)
-        browser_frame.grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E))
+        browser_frame.grid(row=6, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E))
 
         self.use_browser_var = tk.BooleanVar()
         self.use_browser_check = ttk.Checkbutton(
@@ -111,27 +123,27 @@ class CrawlerGUI:
         self.wait_time_entry.insert(0, '2.0')
         self.wait_time_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.root, text="Proxy File:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="Proxy File:").grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
         self.proxy_file_entry = ttk.Entry(self.root, width=50)
-        self.proxy_file_entry.grid(row=6, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.proxy_file_entry.grid(row=7, column=1, padx=5, pady=5, sticky=(tk.W, tk.E))
         ttk.Button(self.root, text="Browse", command=self.browse_proxy_file).grid(
-            row=6, column=2, padx=5, pady=5
+            row=7, column=2, padx=5, pady=5
         )
 
         self.progress_bar = ttk.Progressbar(
             self.root, orient="horizontal", length=300, mode="determinate", variable=self.progress_value
         )
-        self.progress_bar.grid(row=7, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E))
+        self.progress_bar.grid(row=8, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E))
 
-        ttk.Label(self.root, text="Output:").grid(row=8, column=0, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.root, text="Output:").grid(row=9, column=0, padx=5, pady=5, sticky=tk.W)
         self.output_text = tk.Text(self.root, wrap=tk.WORD, height=10, width=70)
-        self.output_text.grid(row=9, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+        self.output_text.grid(row=10, column=0, columnspan=3, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar = ttk.Scrollbar(self.root, command=self.output_text.yview)
-        scrollbar.grid(row=9, column=3, sticky=(tk.N, tk.S))
+        scrollbar.grid(row=10, column=3, sticky=(tk.N, tk.S))
         self.output_text['yscrollcommand'] = scrollbar.set
 
         ttk.Button(self.root, text="Start Crawling", command=self.start_crawl).grid(
-            row=10, column=0, columnspan=3, padx=5, pady=10
+            row=11, column=0, columnspan=3, padx=5, pady=10
         )
         self.root.columnconfigure(1, weight=1)
         self.root.rowconfigure(9, weight=1)
