@@ -125,11 +125,47 @@ class WebCrawler:
             )
             await self.arxiv_handler.setup()
 
+    async def cleanup(self) -> None:
+        """Clean up resources and perform final tasks."""
+        try:
+            # Call synchronous cleanup methods directly
+            self._cleanup_cache()
+            self._cleanup_visited_urls()
+            
+            # Clean up robots cache
+            current_time = time.time()
+            self.robots_cache = {
+                domain: cache for domain, cache in self.robots_cache.items()
+                if current_time - cache['timestamp'] < self.robots_cache_ttl
+            }
+            
+            # Save final stats
+            if self.stats['pages_crawled'] > 0:
+                self.stats['success_rate'] = 1 - (self.stats['errors'] / self.stats['pages_crawled'])
+                logging.info(f"Crawling completed. Success rate: {self.stats['success_rate']:.2%}")
+                
+            # Ensure all aiohttp sessions are properly closed
+            tasks = []
+            for attr in dir(self):
+                obj = getattr(self, attr)
+                if isinstance(obj, aiohttp.ClientSession) and not obj.closed:
+                    tasks.append(obj.close())
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
+                
+        except Exception as e:
+            logging.error(f"Error during cleanup: {e}")
+
     async def close(self) -> None:
         """Properly close all resources."""
         try:
-            if self.session and not self.session.closed:
+            # First run cleanup
+            await self.cleanup()
+            
+            # Close all sessions explicitly
+            if hasattr(self, 'session') and self.session and not self.session.closed:
                 await self.session.close()
+                await asyncio.sleep(0.1)  # Give session time to close
             
             if self.browser:
                 try:
@@ -137,19 +173,20 @@ class WebCrawler:
                 except Exception as e:
                     logging.error(f"Error closing browser: {e}")
             
-            await self.arxiv_handler.close()
-            
-            # Save final stats
-            if self.stats['pages_crawled'] > 0:
-                self.stats['success_rate'] = 1 - (self.stats['errors'] / self.stats['pages_crawled'])
-                logging.info(f"Crawling completed. Success rate: {self.stats['success_rate']:.2%}")
+            # Close arxiv handler
+            if self.arxiv_handler:
+                try:
+                    await self.arxiv_handler.close()
+                except Exception as e:
+                    logging.error(f"Error closing arxiv handler: {e}")
                 
         except Exception as e:
-            logging.error(f"Error during cleanup: {e}")
+            logging.error(f"Error during close: {e}")
         
         finally:
             self.session = None
             self.browser = None
+            self.arxiv_handler = None
 
     async def get_stats(self) -> Dict:
         """Get current crawling statistics."""

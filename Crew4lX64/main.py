@@ -224,10 +224,29 @@ def run_crawler_sync(crawler, data_exporter, config):
             raise
         finally:
             try:
-                await crawler.cleanup()
+                # First stop any ongoing crawls
+                crawler.terminate_crawl = True
+                
+                # Wait a moment for tasks to notice termination
+                await asyncio.sleep(0.5)
+                
+                # Clean up tasks first
                 await cleanup_tasks(loop)
+                
+                # Then close the crawler (which handles session cleanup)
+                await crawler.close()
+                
+                # Final cleanup
+                await crawler.cleanup()
+                
             except Exception as e:
                 logging.error(f"Error during cleanup: {e}")
+                # Try to force close sessions even if cleanup fails
+                if hasattr(crawler, 'session') and crawler.session:
+                    try:
+                        await crawler.session.close()
+                    except Exception:
+                        pass
 
     try:
         return loop.run_until_complete(run_crawler())
@@ -236,7 +255,20 @@ def run_crawler_sync(crawler, data_exporter, config):
         raise
     finally:
         try:
-            loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(loop), return_exceptions=True))
+            # Handle any remaining tasks
+            pending = asyncio.all_tasks(loop)
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            
+            # Close any remaining client sessions
+            for task in pending:
+                if not task.done():
+                    task.cancel()
+            
+            # Final loop cleanup
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
+            
         except Exception as e:
             logging.error(f"Error during final cleanup: {e}")
         finally:

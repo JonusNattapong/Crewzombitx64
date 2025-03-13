@@ -21,13 +21,36 @@ class CrawlerGUI:
         self.crawl_thread = None
         self.terminate_crawl = False
         self.log_queue = queue.Queue()  # Create instance variable for log queue
+        
+        # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def on_closing(self):
+        """Handle window close event."""
+        if self.crawl_thread and self.crawl_thread.is_alive():
+            if messagebox.askokcancel("Quit", "A crawl is in progress. Do you want to terminate it?"):
+                self.terminate_crawl = True
+                self.log_message("Terminating crawler...")
+                try:
+                    # Wait for a short time for thread to finish
+                    self.crawl_thread.join(timeout=2.0)
+                except Exception as e:
+                    self.log_message(f"Error during shutdown: {e}")
+            else:
+                return
+        self.root.quit()
+        
     def signal_handler(self, signum, frame):
         """Handle SIGINT (Ctrl+C) to gracefully terminate the crawl."""
         if self.crawl_thread and self.crawl_thread.is_alive():
             self.terminate_crawl = True
-            print("Terminating crawler...")
+            self.log_message("Terminating crawler...")
+            try:
+                # Wait for a short time for thread to finish
+                self.crawl_thread.join(timeout=2.0)
+            except Exception as e:
+                self.log_message(f"Error during shutdown: {e}")
             self.enable_ui()
             self.log_message("Crawling terminated.")
         self.root.quit()
@@ -183,13 +206,17 @@ class CrawlerGUI:
 
     def run_crawl(self):
         """Runs the crawl in a separate thread."""
-        self.crawl_thread = threading.Thread(
-            target=main,
-            args=(self.config, self.handle_log),  # Pass the handler method instead of queue.put directly
-            daemon=True
-        )
-        self.crawl_thread.start()
-        self.check_queue()
+        try:
+            self.crawl_thread = threading.Thread(
+                target=main,
+                args=(self.config, self.handle_log),  # Pass the handler method instead of queue.put directly
+                daemon=True
+            )
+            self.crawl_thread.start()
+            self.check_queue()
+        except Exception as e:
+            self.log_message(f"Error starting crawl: {e}")
+            self.enable_ui()
 
     def check_queue(self):
         """Checks the queue for log messages and updates the GUI."""

@@ -1,3 +1,7 @@
+# GUI Dependencies
+ttkthemes>=3.2.2
+tktooltip>=1.2.0
+
 # Core Dependencies
 requests>=2.25.1
 beautifulsoup4>=4.9.3
