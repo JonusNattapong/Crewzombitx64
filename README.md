@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub Package](https://img.shields.io/badge/GitHub-Package-green.svg)](https://github.com/features/packages)
-[![GitHub Stars](https://img.shields.io/github/stars/JonusNattapong/Notebook-Git-Colab.svg?style=social)](https://github.com/JonusNattapong/Notebook-Git-Colab/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/JonusNattapong/Crewzombitx64.svg?style=social)](https://github.com/JonusNattapong/Crewzombitx64/stargazers)
 
 *A powerful web scraping and content analysis tool with AI integration*
 
