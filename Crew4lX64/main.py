@@ -2,315 +2,322 @@
 import asyncio
 import sys
 import time
+import os
+import platform
+import queue
+import threading
 from argparse import ArgumentParser
 from urllib.parse import urlparse
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+import json
+import shutil
+import traceback
 
-from web_crawler import WebCrawler
-from data_exporter import DataExporter
-from rate_limiter import RateLimiter
-from content_extractor import ContentExtractor
-from proxy_manager import ProxyManager
-from preset_configs import get_preset_config
+from Crew4lX64.web_crawler import WebCrawler
+from Crew4lX64.data_exporter import DataExporter
+from Crew4lX64.rate_limiter import RateLimiter
+from Crew4lX64.content_extractor import ContentExtractor
+from Crew4lX64.proxy_manager import ProxyManager
+from Crew4lX64.preset_configs import get_preset_config
+from Crew4lX64.cache_manager import CacheManager
 
-ascii_art = """                                                                            
+# Check for rich module
+try:
+    from rich.console import Console
+    from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
+    from rich.panel import Panel
+    from rich.table import Table
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+
+# Check for GUI modules
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+    GUI_AVAILABLE = True
+except ImportError:
+    GUI_AVAILABLE = False
+
+# ASCII art banner
+ascii_art = '''
 ███████╗ ██████╗ ███╗   ███╗██████╗ ██╗████████╗██╗  ██╗ ██████╗ ██╗  ██╗
 ╚══███╔╝██╔═══██╗████╗ ████║██╔══██╗██║╚══██╔══╝╚██╗██╔╝██╔════╝ ██║  ██║
   ███╔╝ ██║   ██║██╔████╔██║██████╔╝██║   ██║    ╚███╔╝ ███████╗ ███████║
  ███╔╝  ██║   ██║██║╚██╔╝██║██╔══██╗██║   ██║    ██╔██╗ ██╔═══██╗╚════██║
 ███████╗╚██████╔╝██║ ╚═╝ ██║██████╔╝██║   ██║   ██╔╝ ██╗╚██████╔╝     ██║
 ╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝      ╚═╝
-    """
+'''
 
-class ProgressSpinner:
-    def __init__(self):
+# Set up console for rich output
+console = Console() if RICH_AVAILABLE else None
+
+class ProgressTracker:
+    """Progress tracking with rich output support"""
+    def __init__(self, use_rich=False):
+        self.use_rich = use_rich and RICH_AVAILABLE
         self.spinners = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
         self.i = 0
         self.is_running = True
-        self.start_time = None
         self.status = "Initializing..."
-        
+        self.progress = None
+        self.task_id = None
+
+    def setup(self):
+        """Initialize the progress display"""
+        if self.use_rich:
+            self.progress = Progress(
+                TextColumn("[bold blue]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+                console=console
+            )
+            self.progress.start()
+            self.task_id = self.progress.add_task(self.status, total=None)
+
     def update_status(self, status):
+        """Update the progress status"""
         self.status = status
-        
-    async def spin(self):
-        self.start_time = time.time()
+        try:
+            if self.use_rich and self.progress and self.task_id is not None:
+                self.progress.update(self.task_id, description=status)
+        except Exception:
+            pass
+
+    def spin(self):
+        """Show spinner animation in non-rich mode"""
         while self.is_running:
-            elapsed = time.time() - self.start_time
-            sys.stdout.write(f"\r{self.spinners[self.i]} {self.status} (elapsed: {elapsed:.1f}s)")
-            sys.stdout.flush()
-            await asyncio.sleep(0.1)
-            self.i = (self.i + 1) % len(self.spinners)
-            
+            try:
+                if not self.use_rich:
+                    sys.stdout.write(f"\r{self.spinners[self.i]} {self.status}")
+                    sys.stdout.flush()
+                    self.i = (self.i + 1) % len(self.spinners)
+                time.sleep(0.1)
+            except Exception:
+                break
+
     def stop(self):
+        """Stop the progress display"""
         self.is_running = False
-        sys.stdout.write("\r")
-        sys.stdout.flush()
+        try:
+            if self.use_rich and self.progress:
+                self.progress.stop()
+            else:
+                sys.stdout.write("\r" + " " * 80 + "\r")
+                sys.stdout.flush()
+        except Exception:
+            pass
+
+class QueueHandler(logging.Handler):
+    """Custom logging handler for GUI mode"""
+    def __init__(self, handler_function):
+        super().__init__()
+        self.handler_function = handler_function
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.handler_function(msg)
+        except Exception:
+            self.handleError(record)
 
 def setup_argument_parser():
-    parser = ArgumentParser(description='Advanced Web Crawler')
+    """Create and configure the argument parser"""
+    parser = ArgumentParser(description='Crew4lX64 Advanced Web Crawler')
     
     # Basic Options
     basic_group = parser.add_argument_group('Basic Options')
     basic_group.add_argument('--url', help='URL to crawl')
-    basic_group.add_argument('--interactive', action='store_true', 
-                          help='Enable interactive mode for configuration')
-    basic_group.add_argument('--preset', choices=['basic', 'aggressive', 'stealth', 'api', 'archive'],
-                          help='Use preset configuration')
-    basic_group.add_argument('--depth', type=int, default=2, 
-                          help='Crawl depth (default: 2)')
-    basic_group.add_argument('--output-format', choices=['json', 'csv', 'md', 'all'], 
-                          default='json',
-                          help='Output format: json, csv, md, or all (default: json)')
-    basic_group.add_argument('--output-dir', default='scraped_output',
-                          help='Output directory (default: scraped_output)')
+    basic_group.add_argument('--interactive', action='store_true', help='Interactive mode')
+    basic_group.add_argument('--gui', action='store_true', help='Launch GUI mode')
+    basic_group.add_argument('--preset', choices=['basic', 'aggressive', 'stealth', 'api', 'archive'])
+    basic_group.add_argument('--depth', type=int, default=2)
+    basic_group.add_argument('--output-format', choices=['json', 'csv', 'md', 'html', 'all'], 
+                           default='json')
+    basic_group.add_argument('--output-dir', default='scraped_output')
 
-    # Advanced Options (hidden by default in interactive mode)
+    # Advanced Options
     advanced_group = parser.add_argument_group('Advanced Options')
-    advanced_group.add_argument('--browser', action='store_true', 
-                             help='Use browser for rendering')
-    advanced_group.add_argument('--headless', action='store_true', 
-                             help='Run browser in headless mode')
-    advanced_group.add_argument('--wait-time', type=float, default=2.0,
-                             help='Wait time for dynamic content (default: 2.0s)')
-    advanced_group.add_argument('--scroll', action='store_true', 
-                             help='Enable auto-scrolling for dynamic loading')
-    advanced_group.add_argument('--rate-limit', type=float, default=1.0,
-                             help='Requests per second (default: 1.0)')
-    advanced_group.add_argument('--retry-count', type=int, default=3,
-                             help='Number of retries for failed requests (default: 3)')
-    advanced_group.add_argument('--retry-delay', type=float, default=1.0,
-                             help='Delay between retries in seconds (default: 1.0)')
-    advanced_group.add_argument('--proxies', help='File with proxy list (one per line)')
-    advanced_group.add_argument('--user-agents', help='File with user agents (one per line)')
-    advanced_group.add_argument('--respect-robots', action='store_true',
-                             help='Respect robots.txt rules')
-    
+    advanced_group.add_argument('--browser', action='store_true')
+    advanced_group.add_argument('--headless', action='store_true')
+    advanced_group.add_argument('--wait-time', type=float, default=2.0)
+    advanced_group.add_argument('--scroll', action='store_true')
+    advanced_group.add_argument('--rate-limit', type=float, default=1.0)
+    advanced_group.add_argument('--retry-count', type=int, default=3)
+    advanced_group.add_argument('--retry-delay', type=float, default=1.0)
+    advanced_group.add_argument('--proxies', help='Proxy list file')
+    advanced_group.add_argument('--respect-robots', action='store_true')
+
+    # Display Options
+    display_group = parser.add_argument_group('Display Options')
+    display_group.add_argument('--quiet', action='store_true')
+    display_group.add_argument('--rich', action='store_true')
+
     return parser
 
-def get_interactive_config() -> Dict[str, Any]:
-    """Get configuration through interactive prompts."""
-    config = {}
-    
-    print("\n🔧 Interactive Configuration")
-    print("---------------------------")
-    
-    # Purpose selection
-    print("\nWhat's the main purpose of your crawl?")
-    print("1. Basic website crawling (safe defaults)")
-    print("2. Aggressive crawling (faster, higher depth)")
-    print("3. Stealth crawling (slower, more cautious)")
-    print("4. API endpoints (optimized for REST APIs)")
-    print("5. Archive crawling (high depth, large files)")
-    
-    while True:
-        try:
-            choice = int(input("\nEnter your choice (1-5): "))
-            if 1 <= choice <= 5:
-                break
-            print("Please enter a number between 1 and 5")
-        except ValueError:
-            print("Please enter a valid number")
-    
-    preset_map = {
-        1: 'basic',
-        2: 'aggressive',
-        3: 'stealth',
-        4: 'api',
-        5: 'archive'
-    }
-    
-    config.update(get_preset_config(preset_map[choice]))
-    
-    # Output format
-    print("\nSelect output format:")
-    print("1. JSON (default)")
-    print("2. CSV")
-    print("3. Markdown")
-    print("4. All formats")
-    
-    while True:
-        try:
-            format_choice = int(input("\nEnter your choice (1-4): "))
-            if 1 <= format_choice <= 4:
-                break
-            print("Please enter a number between 1 and 4")
-        except ValueError:
-            print("Please enter a valid number")
-    
-    format_map = {
-        1: 'json',
-        2: 'csv',
-        3: 'md',
-        4: 'all'
-    }
-    
-    config['output_format'] = format_map[format_choice]
-    
-    # Advanced options
-    if input("\nWould you like to configure advanced options? (y/N): ").lower() == 'y':
-        config['browser'] = input("Use browser rendering? (y/N): ").lower() == 'y'
-        if config['browser']:
-            config['headless'] = input("Run in headless mode? (Y/n): ").lower() != 'n'
-            config['wait_time'] = float(input("Wait time for dynamic content (seconds, default 2.0): ") or 2.0)
-            config['scroll'] = input("Enable auto-scrolling? (y/N): ").lower() == 'y'
+def show_summary(config: Dict[str, Any], url: str):
+    """Display crawl configuration summary"""
+    if RICH_AVAILABLE and not config.get('no_color', False):
+        table = Table(title="📋 Crawl Configuration")
+        table.add_column("Setting", style="cyan")
+        table.add_column("Value", style="green")
         
-        config['use_proxies'] = input("Use proxy servers? (y/N): ").lower() == 'y'
-        if config['use_proxies']:
-            config['proxy_file'] = input("Path to proxy list file: ")
-    
-    return config
-
-async def main():
-    parser = setup_argument_parser()
-    args = parser.parse_args()
-    
-    print(ascii_art)
-    
-    # Initialize spinner
-    spinner = ProgressSpinner()
-    spinner_task = asyncio.create_task(spinner.spin())
-    
-    try:
-        # Get configuration
-        if args.interactive:
-            config = get_interactive_config()
-        elif args.preset:
-            config = get_preset_config(args.preset)
-        else:
-            # Use command line arguments
-            config = vars(args)
+        table.add_row("URL", url)
+        table.add_row("Mode", config.get('preset', 'Custom'))
+        table.add_row("Depth", str(config.get('depth', 2)))
+        table.add_row("Browser", "✅" if config.get('browser', False) else "❌")
+        table.add_row("Output format", config.get('output_format', 'json'))
         
-        spinner.update_status("Initializing crawler...")
-        crawler = WebCrawler()
-        rate_limiter = RateLimiter(requests_per_second=config.get('rate_limit', 1.0))
-        content_extractor = ContentExtractor()
-        data_exporter = DataExporter()
+        console.print(table)
+    else:
+        print("\n📋 Configuration Summary")
+        print("========================")
+        print(f"URL: {url}")
+        print(f"Mode: {config.get('preset', 'Custom')}")
+        print(f"Depth: {config.get('depth', 2)}")
+        print(f"Browser: {'Yes' if config.get('browser', False) else 'No'}")
+        print(f"Output format: {config.get('output_format', 'json')}")
 
-        if config.get('use_proxies'):
-            spinner.update_status("Loading proxy list...")
-            proxy_manager = ProxyManager()
-            if 'proxy_file' in config:
-                await proxy_manager.load_from_file(config['proxy_file'])
-            elif args.proxies:
-                await proxy_manager.load_from_file(args.proxies)
-
-        spinner.update_status("Setting up crawler configuration...")
-        await crawler.setup(
-            use_browser=config.get('browser', False),
-            respect_robots=config.get('respect_robots', True),
-            rate_limit=config.get('rate_limit', 1.0),
-            use_proxies=config.get('use_proxies', False),
-            headless=config.get('headless', True),
-            wait_time=config.get('wait_time', 2.0),
-            auto_scroll=config.get('scroll', False),
-            retry_count=config.get('retry_count', 3),
-            retry_delay=config.get('retry_delay', 1.0),
-            proxy_timeout=config.get('proxy_timeout', 10.0)
-        )
-
-        url = args.url or input("\nEnter URL to crawl: ")
-        
-        print(f"\n📋 Configuration:")
-        print(f"  • Mode: {args.preset or 'Custom'}")
-        print(f"  • Depth: {config.get('depth', 2)}")
-        print(f"  • Browser mode: {'✅' if config.get('browser') else '❌'}")
-        print(f"  • Rate limit: {config.get('rate_limit', 1.0)} req/sec")
-        print(f"  • Robots.txt: {'✅' if config.get('respect_robots') else '❌'}")
-        print(f"  • Proxy enabled: {'✅' if config.get('use_proxies') else '❌'}")
-        print(f"  • Output format: {config.get('output_format', 'json')}")
-        
-        if config.get('browser'):
-            print(f"  • Headless mode: {'✅' if config.get('headless') else '❌'}")
-            print(f"  • Wait time: {config.get('wait_time')}s")
-            print(f"  • Auto-scroll: {'✅' if config.get('scroll') else '❌'}")
-
-        spinner.update_status(f"Crawling {url}...")
-        start_time = time.time()
-
+async def cleanup_tasks(loop):
+    """Clean up any pending tasks in the event loop"""
+    tasks = [t for t in asyncio.all_tasks(loop) if t is not asyncio.current_task()]
+    for task in tasks:
+        task.cancel()
         try:
-            if '?' in url and ('page=' in url or 'p=' in url):
-                print("\n📄 Pagination detected. Using paginated crawl...")
-                page_param = 'page' if 'page=' in url else 'p'
-                result = await crawler.crawl_with_pagination(
-                    url, 
-                    depth=config.get('depth', 2),
-                    page_param=page_param,
-                    max_pages=config.get('max_pages', 10)
-                )
-            else:
-                result = await crawler.crawl(url, depth=config.get('depth', 2))
-
-            spinner.stop()
-            elapsed = time.time() - start_time
-            print(f"\r✅ Crawling completed in {elapsed:.1f} seconds!")
-
-        except Exception as e:
-            spinner.stop()
-            print(f"\r❌ Crawling failed: {str(e)}")
-            logging.error(f"Error crawling {url}: {e}")
-            return
-
-        if result:
-            spinner.update_status("Saving results...")
-            timestamp = time.strftime("%Y%m%d_%H%M%S") if config.get('timestamp', True) else ""
-            os.makedirs(config.get('output_dir', 'scraped_output'), exist_ok=True)
-            base_filename = f"{config.get('output_dir', 'scraped_output')}/{urlparse(url).netloc.replace('.', '_')}{f'_{timestamp}' if timestamp else ''}"
-
-            output_format = config.get('output_format', 'json')
-            if output_format in ('json', 'all'):
-                json_file = await data_exporter.export_to_json(result, f"{base_filename}.json")
-                print(f"  📊 JSON data saved: {json_file}")
-
-            if output_format in ('csv', 'all'):
-                csv_file = await data_exporter.export_to_csv(result, f"{base_filename}.csv")
-                print(f"  📈 CSV data saved: {csv_file}")
-
-            if output_format in ('md', 'all'):
-                md_file = await data_exporter.export_to_markdown(result, f"{base_filename}.md")
-                print(f"  📝 Markdown data saved: {md_file}")
-
-            if config.get('export_links', True):
-                links_file = f"{base_filename}_links.txt"
-                with open(links_file, 'w', encoding='utf-8') as f:
-                    for link in result.get('links', []):
-                        f.write(f"{link.get('url')}\n")
-                print(f"  🔗 Links exported: {links_file}")
-
-            print("\n📊 Summary Statistics:")
-            if isinstance(result, list):
-                total_pages = len(result)
-                total_links = sum(len(page.get('links', [])) for page in result)
-                print(f"  📄 Pages crawled: {total_pages}")
-                print(f"  🔗 Links found: {total_links}")
-            else:
-                print(f"  🔗 Links found: {len(result.get('links', []))}")
-                print(f"  🖼️ Images found: {len(result.get('media', {}).get('images', []))}")
-                print(f"  📹 Videos found: {len(result.get('media', {}).get('videos', []))}")
-                if 'documents' in result.get('media', {}):
-                    print(f"  📄 Documents found: {len(result.get('media', {}).get('documents', []))}")
-        else:
-            print("\n❌ Failed to crawl URL")
-
-    except Exception as e:
-        print(f"\n❌ An error occurred: {str(e)}")
-    finally:
-        spinner.stop()
-        spinner_task.cancel()
-        try:
-            await spinner_task
+            await task
         except asyncio.CancelledError:
             pass
-        print("\n🧹 Cleaning up...")
-        await crawler.close()
-        print("✅ Done!")
+        except Exception as e:
+            logging.error(f"Error cleaning up task: {e}")
+
+def run_crawler_sync(crawler, data_exporter, config):
+    """Run crawler operations synchronously"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    async def run_crawler():
+        try:
+            # Setup crawler
+            await crawler.setup(
+                use_browser=config.get('browser', False),
+                respect_robots=config.get('respect_robots', True),
+                rate_limit=config.get('rate_limit', 1.0),
+                use_proxies=config.get('use_proxies', False),
+                headless=config.get('headless', True),
+                wait_time=config.get('wait_time', 2.0),
+                auto_scroll=config.get('scroll', False),
+                retry_count=config.get('retry_count', 3),
+                retry_delay=config.get('retry_delay', 1.0),
+                memory_limit=config.get('memory_limit', 0),
+                cache_manager=config.get('cache_manager')
+            )
+
+            if config.get('url'):
+                results = await crawler.crawl(config['url'], depth=config.get('depth', 2))
+                await data_exporter.export(results, config)
+                return results
+            return None
+        except Exception as e:
+            logging.exception("Error during crawl")
+            raise
+        finally:
+            try:
+                await crawler.cleanup()
+                await cleanup_tasks(loop)
+            except Exception as e:
+                logging.error(f"Error during cleanup: {e}")
+
+    try:
+        return loop.run_until_complete(run_crawler())
+    except Exception as e:
+        logging.exception("Error during crawl operation")
+        raise
+    finally:
+        try:
+            loop.run_until_complete(asyncio.gather(*asyncio.all_tasks(loop), return_exceptions=True))
+        except Exception as e:
+            logging.error(f"Error during final cleanup: {e}")
+        finally:
+            loop.close()
+
+def main(config=None, log_function=None):
+    """Main entry point for both CLI and GUI modes"""
+    parser = setup_argument_parser()
+    args = parser.parse_args()
+
+    # Start in GUI mode if specified
+    if args.gui and GUI_AVAILABLE:
+        from Crew4lX64.gui import launch_gui
+        launch_gui()
+        return
+
+    # Configure logging
+    handlers = [logging.StreamHandler()]
+    if log_function:
+        queue_handler = QueueHandler(log_function)
+        handlers.append(queue_handler)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=handlers,
+        force=True
+    )
+
+    # Show ASCII art banner
+    if config is None or not config.get('quiet', False):
+        print(ascii_art)
+
+    # Initialize progress tracking
+    spinner = None
+    spinner_thread = None
+    if config is None or not config.get('quiet', False):
+        spinner = ProgressTracker(use_rich=args.rich if config is None else config.get('rich', False))
+        spinner.setup()
+        spinner_thread = threading.Thread(target=spinner.spin, daemon=True)
+        spinner_thread.start()
+
+    try:
+        # Get configuration
+        if config is None:
+            if args.interactive:
+                config = get_preset_config(args.preset or 'basic')
+            else:
+                config = vars(args)
+
+        # Initialize components
+        if spinner:
+            spinner.update_status("Initializing crawler...")
+
+        crawler = WebCrawler()
+        data_exporter = DataExporter()
+        cache_manager = CacheManager() if config.get('use_cache', False) else None
+        config['cache_manager'] = cache_manager
+
+        # Show configuration summary
+        if spinner:
+            spinner.update_status("Setting up crawler...")
+        show_summary(config, config.get('url', ''))
+
+        # Run crawler
+        if spinner:
+            spinner.update_status("Running crawler...")
+        run_crawler_sync(crawler, data_exporter, config)
+
+        if spinner:
+            spinner.update_status("Crawl completed")
+
+    except KeyboardInterrupt:
+        logging.info("Crawl interrupted by user")
+    except Exception as e:
+        logging.exception("An error occurred during the crawl")
+    finally:
+        if spinner:
+            spinner.stop()
+            if spinner_thread and spinner_thread.is_alive():
+                spinner_thread.join(timeout=1.0)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\n🛑 Crawler stopped by user")
-    except Exception as e:
-        print(f"\n❌ An error occurred: {str(e)}")
+    main()

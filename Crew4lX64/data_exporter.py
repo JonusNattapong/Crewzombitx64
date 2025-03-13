@@ -265,3 +265,24 @@ class DataExporter:
             else:
                 items.append((new_key, v))
         return dict(items)
+
+    async def export(self, data: Dict, config: Dict):
+        """Export data based on configuration"""
+        output_format = config.get('output_format', 'json')
+        output_dir = config.get('output_dir', 'scraped_output')
+        url = config.get('url', 'default')
+
+        # Sanitize URL for filename
+        parsed_url = urlparse(url)
+        sanitized_url = re.sub(r'[\\/*?:"<>|]', "", parsed_url.netloc + parsed_url.path)
+        if not sanitized_url:
+          sanitized_url = 'default'
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        base_filename = f"{output_dir}/{sanitized_url}_{timestamp}"
+
+        if output_format == 'json' or output_format == 'all':
+            await self.export_to_json(data, f"{base_filename}.json")
+        if output_format == 'csv' or output_format == 'all':
+            await self.export_to_csv(data, f"{base_filename}.csv")
+        if output_format == 'md' or output_format == 'all':
+            await self.export_to_markdown(data, f"{base_filename}.md")
